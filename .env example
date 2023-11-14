@@ -1,0 +1,9 @@
+
+# Database
+DATABASE_URL="postgresql://mynestuser:123@localhost:5432/nest?schema=public"
+JWT_SECRET="abababababababababababababababababab"
+
+MAIL_HOST="smtp.office365.com"
+MAIL_USER="verification@gmail.com"
+MAIL_PASSWORD="12345"
+

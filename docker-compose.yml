@@ -1,0 +1,14 @@
+# command line
+# docker compose up Auth-DB -d
+
+version: '3.8'
+services:
+  Auth-DB:
+    image: postgres:13
+    container_name: my-nest-app-Auth-DB
+    environment:
+      POSTGRES_DB: nest
+      POSTGRES_USER: juel
+      POSTGRES_PASSWORD: 123
+    ports:
+      - '5432:5432'
