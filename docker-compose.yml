@@ -1,6 +1,6 @@
 # command line
-# docker compose up Auth-DB -d
-
+# (Windows) docker compose up Auth-DB -d
+# (ubuntu) docker-compose up Auth-DB
 version: '3.8'
 services:
   Auth-DB:

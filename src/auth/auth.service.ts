@@ -184,6 +184,8 @@ export class AuthService {
           token: token,
           data: { ...userWithoutSomeInfo },
         };
+      } else {
+        throw new NotFoundException('otp does not matched');
       }
     } else {
       throw new NotFoundException('otp not found');
