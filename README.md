@@ -18,7 +18,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 
 
-## 🚀 Key Features: Boost you project speed
+## 🚀 Key Features: Boost your project speed
 
 | Feature                     | Description                                                                                      |
 |-----------------------------|--------------------------------------------------------------------------------------------------|
