@@ -1,7 +1,9 @@
 
 # NestJS Authentication Boilerplate
 
-<img src="https://docs.nestjs.com/assets/logo-small.svg" alt="NestJS Logo" width="200px" style="display: block; margin: auto;">
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
+</p>
 
 ![YourVersion](https://img.shields.io/badge/tag-v1.0.0-blue.svg)
 ![YourRelease](https://img.shields.io/badge/release-v1.2.3-blue.svg)
