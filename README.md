@@ -18,7 +18,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 
 
-## 🚀Key Features: Empowering Your Project
+## 🚀 Key Features: Empowering Your Project
 
 | Feature                     | Description                                                                                      |
 |-----------------------------|--------------------------------------------------------------------------------------------------|
@@ -30,7 +30,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 
 
-## 🚀 Swagger Documents:
+## 📖 Swagger Documents:
 
 <img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/photos/swagger.png" alt="swagger" style="display: block; margin: auto;">
 
