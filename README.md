@@ -24,6 +24,6 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 | **Change Password API**     | Take control of your account security with effortless password changes.                          |
 
 
-<img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/photos/swagger.png" alt="swagger" width="200px" style="display: block; margin: auto;">
+<img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/photos/swagger.png" alt="swagger" style="display: block; margin: auto;">
 
 
