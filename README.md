@@ -32,5 +32,5 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 ## 📖 Swagger Documents:
 
-<img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/photos/swagger.png" alt="swagger" style="display: block; margin: auto;">
+<img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/documents/photos/swagger.png" alt="swagger" style="display: block; margin: auto;">
 
