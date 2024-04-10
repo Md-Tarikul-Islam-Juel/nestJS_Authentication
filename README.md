@@ -34,3 +34,9 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 <img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/documents/photos/swagger.png" alt="swagger" style="display: block; margin: auto;">
 
+## 📁 Project contents:
+- **Code**: Contains the source code for your project, including all necessary files and modules.
+- **Postman Collection**: Provides pre-configured requests for testing and interacting with your API endpoints in documents folder.
+- **Swagger Documentation (API Documentation)**:
+Generates interactive documentation describing your API endpoints, request parameters, response formats, and authentication methods.
+Accessible at **http://localhost:3000/api**
