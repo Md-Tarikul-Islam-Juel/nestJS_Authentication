@@ -18,7 +18,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 
 
-## 🚀 Key Features: Boost your project speed
+## 🚀 Key Features: Boost your project speed 
 
 | Feature                     | Description                                                                                      |
 |-----------------------------|--------------------------------------------------------------------------------------------------|
@@ -40,3 +40,30 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 - **Swagger Documentation (API Documentation)**:
 Generates interactive documentation describing your API endpoints, request parameters, response formats, and authentication methods.
 Accessible at **http://localhost:3000/api**
+
+
+
+## 🚴🏿 Setup Instructions:
+
+1. **Clone the Repository:**
+   - Download or clone the repository to your local machine.
+
+2. **Create Environment File:**
+   - Navigate to the root directory.
+   - Create a `.env` file based on `.env.example`.
+   - Modify the variables in `.env` according to your configuration.
+
+3. **Install Dependencies:**
+   - Open your terminal.
+   - Run `yarn install` or `npm install` to install project dependencies.
+
+4. **Import Postman Collection:**
+   - Locate `nestJs_Authentication.postman_collection.json` in `documents/postman/`.
+   - Import the collection into Postman.
+
+5. **Run the Project:**
+   - Start the project with `npm start` or `yarn start` in the terminal.
+
+6. **Access Swagger Documentation:**
+   - Open `http://localhost:3000/api` in your web browser to view the Swagger documentation.
+
