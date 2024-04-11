@@ -8,9 +8,9 @@
 
 
 ![YourVersion](https://img.shields.io/badge/tag-v1.0.0-blue.svg)
-![YourRelease](https://img.shields.io/badge/release-v1.2.3-blue.svg)
-![YourIssues](https://img.shields.io/badge/issues-10%20open-red.svg)
-![YourBower](https://img.shields.io/badge/bower-v1.2.3-blue.svg)
+![YourRelease](https://img.shields.io/badge/release-v1.0.0-blue.svg)
+![YourIssues](https://img.shields.io/badge/issues-0%20open-red.svg)
+
 
 
 
