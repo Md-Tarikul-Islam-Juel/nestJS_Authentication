@@ -6,10 +6,9 @@
 </p>
 
 
-
-![YourVersion](https://img.shields.io/badge/tag-v1.0.0-blue.svg)
-![YourRelease](https://img.shields.io/badge/release-v1.0.0-blue.svg)
-![YourIssues](https://img.shields.io/badge/issues-0%20open-red.svg)
+![Version](https://img.shields.io/github/v/tag/Md-Tarikul-Islam-Juel/nestJS_Authentication?label=version&color=blue)
+![Release](https://img.shields.io/github/v/release/Md-Tarikul-Islam-Juel/nestJS_Authentication?label=release&color=blue)
+![Issues](https://img.shields.io/github/issues/Md-Tarikul-Islam-Juel/nestJS_Authentication?color=red)
 
 
 
