@@ -56,13 +56,17 @@ Accessible at **http://localhost:3000/api**
    - Open your terminal.
    - Run `yarn install` or `npm install` to install project dependencies.
 
-4. **Import Postman Collection:**
+4. **Setup Docker:**
+   - Ensure Docker is installed on your machine.
+   - Run docker-compose up -d to start the PostgreSQL DB container.
+    
+5. **Import Postman Collection:**
    - Locate `nestJs_Authentication.postman_collection.json` in `documents/postman/`.
    - Import the collection into Postman.
 
-5. **Run the Project:**
+6. **Run the Project:**
    - Start the project with `npm start` or `yarn start` in the terminal.
 
-6. **Access Swagger Documentation:**
+7. **Access Swagger Documentation:**
    - Open `http://localhost:3000/api` in your web browser to view the Swagger documentation.
 
