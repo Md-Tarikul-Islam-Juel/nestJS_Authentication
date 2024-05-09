@@ -17,15 +17,16 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 
 
-## 🚀 Key Features: Boost your project speed 
+## 🚀 Key Features: Boost your project speed
 
-| Feature                     | Description                                                                                      |
-|-----------------------------|--------------------------------------------------------------------------------------------------|
-| **Sign-Up & Login APIs**    | Streamline user onboarding with a smooth and intuitive registration and login experience.        |
-| **Email Verification API**  | Boost security and prevent unauthorized access through email OTP verification.                   |
-| **OTP Resend API**          | Never let users get stuck! Offer convenient OTP resend options for seamless account activation.  |
-| **Forget Password API**     | Forget passwords? No problem! Our secure recovery process helps users regain access quickly.     |
-| **Change Password API**     | Take control of your account security with effortless password changes.                          |
+| Feature                     | Description                                                                                     |
+|-----------------------------|-------------------------------------------------------------------------------------------------|
+| **Sign-Up & Login APIs**    | Streamline user onboarding with a smooth and intuitive registration and login experience.       |
+| **Email Verification API**  | Boost security and prevent unauthorized access through email OTP verification.                  |
+| **OTP Resend API**          | Never let users get stuck! Offer convenient OTP resend options for seamless account activation. |
+| **Forget Password API**     | Forget passwords? No problem! Our secure recovery process helps users regain access quickly.    |
+| **Change Password API**     | Take control of your account security with effortless password changes.                         |
+| **Refresh token API**       | Allowing clients to securely refresh access token.                                              |
 
 
 
@@ -37,8 +38,8 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 - **Code**: Contains the source code for your project, including all necessary files and modules.
 - **Postman Collection**: Provides pre-configured requests for testing and interacting with your API endpoints in documents folder.
 - **Swagger Documentation (API Documentation)**:
-Generates interactive documentation describing your API endpoints, request parameters, response formats, and authentication methods.
-Accessible at **http://localhost:3000/api**
+  Generates interactive documentation describing your API endpoints, request parameters, response formats, and authentication methods.
+  Accessible at **http://localhost:3000/api**
 
 
 
@@ -59,7 +60,7 @@ Accessible at **http://localhost:3000/api**
 4. **Setup Docker:**
    - Ensure Docker is installed on your machine.
    - Run docker-compose up -d to start the PostgreSQL DB container.
-    
+
 5. **Import Postman Collection:**
    - Locate `nestJs_Authentication.postman_collection.json` in `documents/postman/`.
    - Import the collection into Postman.
