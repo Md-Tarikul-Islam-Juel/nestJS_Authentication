@@ -76,6 +76,10 @@ export class SigninSuccessResponseDto {
     data: SigninUserData;
 
     @ApiProperty({description: 'JWT token for authentication', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
+    accessToken: string
+
+    @ApiProperty({description: 'JWT refresh token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
+    refreshToken: string;@ApiProperty({description: 'JWT token for authentication', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
     token: string;
 }
 
@@ -123,7 +127,10 @@ export class VerificationSuccessResponseDto {
     message: string;
 
     @ApiProperty({description: 'JWT token for authentication', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
-    token: string;
+    accessToken: string
+
+    @ApiProperty({description: 'JWT refresh token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
+    refreshToken: string;
 
     @ApiProperty({description: 'Data of the verified user', type: VerificationUserData})
     data: VerificationUserData;
@@ -222,4 +229,16 @@ export class ChangePasswordUnverifiedResponseDto {
 
     @ApiProperty({description: 'Message indicating Unverified user', example: verifyYourUser})
     message: string;
+}
+
+
+// =================================================================
+//-----------------------refresh token------------------------------
+// =================================================================
+export class RefreshTokenSuccessResponseDto{
+    @ApiProperty({description: 'Access token generate successful', example: true})
+    success: boolean;
+
+    @ApiProperty({description: 'Access token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZC...'})
+    accessToken: string;
 }

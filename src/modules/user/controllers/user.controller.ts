@@ -19,7 +19,7 @@ export class UserController {
 
     @HttpCode(HttpStatus.OK)
     @Get(ME)
-    @UseGuards(AuthGuard('my_jwt_guard'))
+    @UseGuards(AuthGuard('jwt_accessToken_guard'))
     @ApiOperation({summary: 'Get user data'})
     @ApiOkResponse({description: "Get user data", type: MeSuccessResponseDto})
     async me(@Req() req: Request) {

@@ -1,4 +1,4 @@
-import {Body, Controller, HttpCode, HttpStatus, Inject, Post, Req, UseGuards,} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport';
 import {Request} from 'express';
 import {AuthService} from '../services/auth.service';
@@ -17,22 +17,22 @@ import {
     ChangePasswordErrorResponseDto,
     ChangePasswordSuccessResponseDto, ChangePasswordUnverifiedResponseDto,
     ForgetPasswordErrorResponseDto,
-    ForgetPasswordSuccessResponseDto,
+    ForgetPasswordSuccessResponseDto, RefreshTokenSuccessResponseDto,
     ResendErrorResponseDto,
     ResendSuccessResponseDto,
     SigninSuccessResponseDto, SigninUnauthorizedResponseDto, SigninUserUnverifiedResponseDto,
     SignupSuccessResponseDto,
-    SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto, VerificationSuccessResponseDto
-} from "../dto/authRespnse.dto";
+    SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto, VerificationSuccessResponseDto,
+} from '../dto/authRespnse.dto';
 import {
     AUTH,
     change_password,
-    forget_password_otp_send,
+    forget_password_otp_send, REFRESH_TOKEN,
     resend_otp,
     SIGNIN,
     SIGNUP,
-    verification_otp
-} from "../utils/string";
+    verification_otp,
+} from '../utils/string';
 
 
 @ApiTags('Auth')
@@ -142,7 +142,7 @@ export class AuthController {
     }
 
     @HttpCode(HttpStatus.OK)
-    @UseGuards(AuthGuard('my_jwt_guard'))
+    @UseGuards(AuthGuard('jwt_accessToken_guard'))
     @Post(change_password)
     @ApiOperation({
         summary: 'Change user password',
@@ -171,6 +171,16 @@ export class AuthController {
         @Req() req: Request,
     ): Promise<ChangePasswordSuccessResponseDto | ChangePasswordErrorResponseDto | ChangePasswordUnverifiedResponseDto> {
         return await this.authService.ChangePassword(ChangePasswordData, req);
+    }
+
+
+    @UseGuards(AuthGuard('jwt_refreshToken_guard'))
+    @HttpCode(HttpStatus.OK)
+    @Get(REFRESH_TOKEN)
+    @ApiOperation({ summary: 'Refresh access token' })
+    @ApiOkResponse({ description: 'Access token refreshed successfully', type: RefreshTokenSuccessResponseDto })
+    async refreshToken(@Req() req: Request,): Promise<RefreshTokenSuccessResponseDto> {
+        return await this.authService.refreshToken(req);
     }
 }
 

@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 
 import * as otpGenerator from 'otp-generator';
 import {PrismaService} from 'src/modules/prisma/prisma.service';
-import {generateJwtToken} from '../utils/utils';
+import { generateJwtAccessToken, generateJwtRefreshToken } from '../utils/utils';
 import {
     ChangePasswordDto,
     ForgetPasswordDto,
@@ -22,13 +22,13 @@ import {
 } from "../dto/authRequest.dto";
 import {
     ChangePasswordErrorResponseDto,
-    ChangePasswordSuccessResponseDto,
+    ChangePasswordSuccessResponseDto, RefreshTokenSuccessResponseDto,
     ResendErrorResponseDto,
     ResendSuccessResponseDto,
     SigninSuccessResponseDto, SigninUnauthorizedResponseDto, SigninUserUnverifiedResponseDto,
     SignupSuccessResponseDto,
-    SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto, VerificationSuccessResponseDto
-} from "../dto/authRespnse.dto";
+    SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto, VerificationSuccessResponseDto,
+} from '../dto/authRespnse.dto';
 import {
     emailSubject,
     failedToChangePassword, oldPasswordIsRequired,
@@ -46,7 +46,8 @@ import {
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
-        private jwt: JwtService,
+        private jwtAccessToken: JwtService,
+        private jwtRefreshToken: JwtService,
         private config: ConfigService,
         private mailerService: MailerService,
     ) {
@@ -134,10 +135,13 @@ export class AuthService {
 
         if (existingUser.verified === true) {
             // Return the JWT token directly
-            const token = generateJwtToken(this.jwt, existingUser);
+            const accessToken = generateJwtAccessToken(this.jwtAccessToken, existingUser);
+            const refreshToken = generateJwtRefreshToken(this.jwtRefreshToken, existingUser);
 
             const {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 password,
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 verified,
                 ...restUser
             } = existingUser;
@@ -146,7 +150,8 @@ export class AuthService {
             return {
                 success: true,
                 message: signinSuccessful,
-                token: token,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
                 data: {...userWithoutSomeInfo},
             };
         }
@@ -196,7 +201,9 @@ export class AuthService {
                 });
 
                 // Return the JWT token directly
-                const token = generateJwtToken(this.jwt, existingUser);
+                const accessToken = generateJwtAccessToken(this.jwtAccessToken, existingUser);
+                const refreshToken = generateJwtRefreshToken(this.jwtRefreshToken, existingUser);
+
 
                 //after update delete the OTP here
                 await this.prisma.OTP.delete({
@@ -206,7 +213,8 @@ export class AuthService {
                 return {
                     success: true,
                     message: otpAuthorised,
-                    token: token,
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
                     data: existingUser,
                 };
             } else {
@@ -349,12 +357,36 @@ export class AuthService {
 
             }
         } else {
-            console.log('llllllllllllllll')
             // user is not authorized to change password because user not called forget password api-> verify api
             throw new BadRequestException({message: failedToChangePassword});
         }
     }
 
+    async refreshToken(req:any):Promise<RefreshTokenSuccessResponseDto>{
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    email: req.user.email,
+                },
+                select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            });
+
+            if (!user) {
+                throw new HttpException('Invalid Refresh Token', HttpStatus.NOT_FOUND);
+            }
+
+            const accessToken = generateJwtAccessToken(this.jwtAccessToken, user);
+
+            return {success: true, accessToken: accessToken};
+        } catch (error) {
+            throw new HttpException('An error occurred while retrieving user data.', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     //-----------------------------------------------------------------------------
     //------------------------------Common function--------------------------------
     //-----------------------------------------------------------------------------
@@ -411,13 +443,12 @@ export class AuthService {
         }
 
         // Send OTP via email (your email sending logic here)
-        const result_after_send_email = await this.mailerService.sendMail({
+        await this.mailerService.sendMail({
             to: email,
             from: this.config.get('MAIL_USER'),
             subject: emailSubject,
             text: otp,
         });
-
         return {
             success: true,
             message: otpEmailSend,

@@ -4,7 +4,9 @@ import {AuthController} from './controllers/auth.controller';
 import {LoggerModule} from "../logger/logger.module";
 import {AuthService} from "./services/auth.service";
 import {JwtConfigModule} from "../jwt/jwt.module";
-import {JwtStrategy} from "../jwt/jwt.strategy";
+import { JwtAccessTokenStrategy } from '../jwt/jwt-access-token.strategy';
+import { JwtRefreshTokenStrategy } from '../jwt/jwt-refresh-token.strategy';
+
 
 @Module({
     imports: [
@@ -13,7 +15,7 @@ import {JwtStrategy} from "../jwt/jwt.strategy";
         JwtConfigModule
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
+    providers: [AuthService, JwtAccessTokenStrategy, JwtRefreshTokenStrategy],
     exports: [AuthService],
 })
 export class AuthModule {

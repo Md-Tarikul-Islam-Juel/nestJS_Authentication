@@ -6,14 +6,14 @@ import {PrismaService} from 'src/modules/prisma/prisma.service';
 import {unauthorized} from "../auth/utils/string";
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'my_jwt_guard') {
+export class JwtAccessTokenStrategy extends PassportStrategy(Strategy, 'jwt_accessToken_guard') {
     constructor(
         config: ConfigService,
         private readonly prisma: PrismaService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey: config.get('JWT_SECRET'),
+            secretOrKey: config.get('JWT_ACCESS_TOKEN_SECRET'),
         });
     }
 
@@ -29,7 +29,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'my_jwt_guard') {
                 email: true,
                 firstName: true,
                 lastName: true,
-                isForgetPassword: true,
                 verified: true,
             }
         });

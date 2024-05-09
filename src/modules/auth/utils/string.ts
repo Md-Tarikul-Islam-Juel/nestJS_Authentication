@@ -6,8 +6,9 @@ export const SIGNUP = 'signup';
 export const SIGNIN = 'signin';
 export const resend_otp = 'resend';
 export const verification_otp = 'verify';
-export const forget_password_otp_send = 'forget_password';
-export const change_password = 'change_password';
+export const forget_password_otp_send = 'forget-password';
+export const change_password = 'change-password';
+export const REFRESH_TOKEN = 'refresh-token';
 
 //---------------------------------------------------------------
 //---------------------------------------------------------------

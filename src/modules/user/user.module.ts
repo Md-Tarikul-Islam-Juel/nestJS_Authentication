@@ -4,7 +4,8 @@ import {UserController} from './controllers/user.controller';
 import {PrismaModule} from "../prisma/prisma.module";
 import {LoggerModule} from "../logger/logger.module";
 import {JwtConfigModule} from "../jwt/jwt.module";
-import {JwtStrategy} from "../jwt/jwt.strategy";
+import { JwtAccessTokenStrategy } from '../jwt/jwt-access-token.strategy';
+
 
 @Module({
     imports: [
@@ -12,7 +13,7 @@ import {JwtStrategy} from "../jwt/jwt.strategy";
         LoggerModule,
         JwtConfigModule
     ],
-    providers: [UserService, JwtStrategy],
+    providers: [UserService, JwtAccessTokenStrategy],
     controllers: [UserController]
 })
 export class UserModule {

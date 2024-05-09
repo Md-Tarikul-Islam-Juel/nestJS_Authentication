@@ -189,11 +189,11 @@ window.onload = function() {
           ]
         }
       },
-      "/auth/forget_password": {
+      "/auth/forget-password": {
         "post": {
           "operationId": "AuthController_forgetPassword",
           "summary": "Forget password OTP email send",
-          "description": "\n      Password recovery steps:\n      \n      1. Call the Forget Password API to sent OTP via email({baseUrl}/auth/forget_password).\n      2. Verify the user's identity by entering the OTP received via email({baseUrl}/auth/verify).\n      3. Call the Change Password API to reset the password, providing the newPassword field in request body({baseUrl}/auth/change_password).\n    ",
+          "description": "\n      Password recovery steps:\n      \n      1. Call the Forget Password API to sent OTP via email({baseUrl}/auth/forget-password).\n      2. Verify the user's identity by entering the OTP received via email({baseUrl}/auth/verify).\n      3. Call the Change Password API to reset the password, providing the newPassword field in request body({baseUrl}/auth/change-password).\n    ",
           "parameters": [],
           "requestBody": {
             "required": true,
@@ -232,7 +232,7 @@ window.onload = function() {
           ]
         }
       },
-      "/auth/change_password": {
+      "/auth/change-password": {
         "post": {
           "operationId": "AuthController_ChangePassword",
           "summary": "Change user password",
@@ -275,6 +275,28 @@ window.onload = function() {
                 "application/json": {
                   "schema": {
                     "$ref": "#/components/schemas/ChangePasswordUnverifiedResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "tags": [
+            "Auth"
+          ]
+        }
+      },
+      "/auth/refresh-token": {
+        "get": {
+          "operationId": "AuthController_refreshToken",
+          "summary": "Refresh access token",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "Access token refreshed successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/RefreshTokenSuccessResponseDto"
                   }
                 }
               }
@@ -501,6 +523,16 @@ window.onload = function() {
                 }
               ]
             },
+            "accessToken": {
+              "type": "string",
+              "description": "JWT token for authentication",
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            },
+            "refreshToken": {
+              "type": "string",
+              "description": "JWT refresh token",
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            },
             "token": {
               "type": "string",
               "description": "JWT token for authentication",
@@ -511,6 +543,8 @@ window.onload = function() {
             "success",
             "message",
             "data",
+            "accessToken",
+            "refreshToken",
             "token"
           ]
         },
@@ -615,9 +649,14 @@ window.onload = function() {
               "description": "Message indicating the result of the OTP verification process",
               "example": "OTP authorised"
             },
-            "token": {
+            "accessToken": {
               "type": "string",
               "description": "JWT token for authentication",
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            },
+            "refreshToken": {
+              "type": "string",
+              "description": "JWT refresh token",
               "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             },
             "data": {
@@ -632,7 +671,8 @@ window.onload = function() {
           "required": [
             "success",
             "message",
-            "token",
+            "accessToken",
+            "refreshToken",
             "data"
           ]
         },
@@ -831,6 +871,25 @@ window.onload = function() {
           "required": [
             "success",
             "message"
+          ]
+        },
+        "RefreshTokenSuccessResponseDto": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "Access token generate successful",
+              "example": true
+            },
+            "accessToken": {
+              "type": "string",
+              "description": "Access token",
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZC..."
+            }
+          },
+          "required": [
+            "success",
+            "accessToken"
           ]
         },
         "MeUserData": {
