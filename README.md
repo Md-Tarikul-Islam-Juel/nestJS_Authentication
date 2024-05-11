@@ -19,14 +19,15 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 ## 🚀 Key Features: Boost your project speed
 
-| Feature                     | Description                                                                                     |
-|-----------------------------|-------------------------------------------------------------------------------------------------|
-| **Sign-Up & Login APIs**    | Streamline user onboarding with a smooth and intuitive registration and login experience.       |
-| **Email Verification API**  | Boost security and prevent unauthorized access through email OTP verification.                  |
-| **OTP Resend API**          | Never let users get stuck! Offer convenient OTP resend options for seamless account activation. |
-| **Forget Password API**     | Forget passwords? No problem! Our secure recovery process helps users regain access quickly.    |
-| **Change Password API**     | Take control of your account security with effortless password changes.                         |
-| **Refresh token API**       | Allowing clients to securely refresh access token.                                              |
+| Feature                    | Description                                                                                         |
+|----------------------------|-----------------------------------------------------------------------------------------------------|
+| **Sign-Up & Login APIs**   | Streamline user onboarding with a smooth and intuitive registration and login experience.           |
+| **Email Verification API** | Boost security and prevent unauthorized access through email OTP verification.                      |
+| **OTP Resend API**         | Never let users get stuck! Offer convenient OTP resend options for seamless account activation.     |
+| **Forget Password API**    | Forget passwords? No problem! Our secure recovery process helps users regain access quickly.        |
+| **Change Password API**    | Take control of your account security with effortless password changes.                             |
+| **Refresh token API**      | Allowing clients to securely refresh access token.                                                  |
+| **OAuth(Google sign-in)**  | Allowing clients to sign-in with google.(Note: config your google cloud console to get credentials) |
 
 
 
