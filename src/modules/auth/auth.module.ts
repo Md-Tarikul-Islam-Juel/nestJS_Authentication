@@ -6,6 +6,7 @@ import {AuthService} from "./services/auth.service";
 import {JwtConfigModule} from "../jwt/jwt.module";
 import { JwtAccessTokenStrategy } from '../jwt/jwt-access-token.strategy';
 import { JwtRefreshTokenStrategy } from '../jwt/jwt-refresh-token.strategy';
+import { GoogleStrategy } from './strategy/google.strategy';
 
 
 @Module({
@@ -15,7 +16,7 @@ import { JwtRefreshTokenStrategy } from '../jwt/jwt-refresh-token.strategy';
         JwtConfigModule
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtAccessTokenStrategy, JwtRefreshTokenStrategy],
+    providers: [AuthService, JwtAccessTokenStrategy, JwtRefreshTokenStrategy, GoogleStrategy],
     exports: [AuthService],
 })
 export class AuthModule {

@@ -1,4 +1,4 @@
-import {IsEmail, IsNotEmpty, IsOptional, IsString, Matches} from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import {ApiProperty} from "@nestjs/swagger";
 import {
     emailIsRequired,
@@ -45,6 +45,28 @@ export class SigninDto {
     @IsString()
     @IsNotEmpty({message: passwordIsRequired})
     password: string;
+}
+
+
+export class GoogleSigninDto {
+    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
+    @IsNotEmpty({message: emailIsRequired})
+    email: string;
+
+    @ApiProperty({example: 'John', description: 'The first name of the user', required: false})
+    @IsString()
+    @IsOptional()
+    firstName: string;
+
+    @ApiProperty({example: 'Doe', description: 'The last name of the user', required: false})
+    @IsString()
+    @IsOptional()
+    lastName: string;
+
+    @ApiProperty({example: 'true', description: 'This is a boolean value'})
+    @IsBoolean()
+    @IsNotEmpty({message: 'must be boolean data'})
+    verified: boolean;
 }
 
 // =================================================================

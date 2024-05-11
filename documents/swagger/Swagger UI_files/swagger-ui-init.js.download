@@ -307,6 +307,41 @@ window.onload = function() {
           ]
         }
       },
+      "/auth/google": {
+        "get": {
+          "operationId": "AuthController_googleAuth",
+          "summary": "Start Google OAuth flow",
+          "description": "Redirects to Google for authentication. This is handled externally by Google OAuth services. Run this url in browser (http://localhost:3000/auth/google)",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": ""
+            }
+          },
+          "tags": [
+            "Auth"
+          ]
+        }
+      },
+      "/auth/google/callback": {
+        "get": {
+          "operationId": "AuthController_googleAuthRedirect",
+          "summary": "Google OAuth callback",
+          "description": "Handles the callback after Google authentication. This endpoint processes the authentication result from Google.",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "Authentication successful, returns user data and tokens"
+            },
+            "401": {
+              "description": "Authentication failed due to invalid or expired credentials."
+            }
+          },
+          "tags": [
+            "Auth"
+          ]
+        }
+      },
       "/user/me": {
         "get": {
           "operationId": "UserController_me",
@@ -532,11 +567,6 @@ window.onload = function() {
               "type": "string",
               "description": "JWT refresh token",
               "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-            },
-            "token": {
-              "type": "string",
-              "description": "JWT token for authentication",
-              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             }
           },
           "required": [
@@ -544,8 +574,7 @@ window.onload = function() {
             "message",
             "data",
             "accessToken",
-            "refreshToken",
-            "token"
+            "refreshToken"
           ]
         },
         "SigninUnauthorizedResponseDto": {

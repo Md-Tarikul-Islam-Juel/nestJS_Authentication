@@ -71,3 +71,5 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 7. **Access Swagger Documentation:**
    - Open `http://localhost:3000/api` in your web browser to view the Swagger documentation.
 
+## Dockerize your NestJs for production :
+https://medium.com/@md.tarikulislamjuel/building-and-deploying-a-nestjs-application-with-docker-compose-postgresql-and-prisma-659ba65da25b

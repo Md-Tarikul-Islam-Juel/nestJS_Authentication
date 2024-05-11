@@ -11,15 +11,15 @@ import * as bcrypt from 'bcrypt';
 
 import * as otpGenerator from 'otp-generator';
 import {PrismaService} from 'src/modules/prisma/prisma.service';
-import { generateJwtAccessToken, generateJwtRefreshToken } from '../utils/utils';
+import { generateJwtAccessToken, generateJwtRefreshToken, randomPasswordGenerator } from '../utils/utils';
 import {
     ChangePasswordDto,
-    ForgetPasswordDto,
+    ForgetPasswordDto, GoogleSigninDto,
     ResendDto,
     SigninDto,
     SignupDto,
-    VerificationDto
-} from "../dto/authRequest.dto";
+    VerificationDto,
+} from '../dto/authRequest.dto';
 import {
     ChangePasswordErrorResponseDto,
     ChangePasswordSuccessResponseDto, RefreshTokenSuccessResponseDto,
@@ -155,6 +155,57 @@ export class AuthService {
                 data: {...userWithoutSomeInfo},
             };
         }
+    }
+
+    async googleSignin(googleSigninData: GoogleSigninDto):Promise<SigninSuccessResponseDto> {
+        try{
+            // Find the user by email in the database
+            let existingUser = await this.prisma.user.findUnique({
+                where: {
+                    email: googleSigninData.email,
+                },
+                select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            });
+
+            // If the user doesn't exist, create a new user
+            if (!existingUser) {
+                // Hash the new randomly generated(10 character) password for security
+                //10 character password
+                const hashedPassword = await bcrypt.hash(randomPasswordGenerator(10), 11);
+
+                // Create a new user in the database
+                existingUser = await this.prisma.user.create({
+                    data: {
+                        ...googleSigninData, // Spread the rest of the properties from signupData
+                        isForgetPassword: false,
+                        password: hashedPassword, // replace password
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                });
+            }
+
+            // return the sign-in data
+            const accessToken = generateJwtAccessToken(this.jwtAccessToken, existingUser);
+            const refreshToken = generateJwtRefreshToken(this.jwtRefreshToken, existingUser);
+
+            return {
+                success: true,
+                message: signinSuccessful,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                data:  existingUser,
+            };
+        }catch(e){console.log(e)}
     }
 
     async verificationOtp(

@@ -182,5 +182,26 @@ export class AuthController {
     async refreshToken(@Req() req: Request,): Promise<RefreshTokenSuccessResponseDto> {
         return await this.authService.refreshToken(req);
     }
+
+
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    @ApiOperation({ summary: 'Start Google OAuth flow', description: 'Redirects to Google for authentication. This is handled externally by Google OAuth services. Run this url in browser (http://localhost:3000/auth/google)' })
+    async googleAuth(): Promise<void> {
+        // Initiates the Google OAuth flow, handled internally by NestJS and Passport
+    }
+
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    @ApiOperation({ summary: 'Google OAuth callback', description: 'Handles the callback after Google authentication. This endpoint processes the authentication result from Google.' })
+    @ApiOkResponse({ description: 'Authentication successful, returns user data and tokens' })
+    @ApiResponse({
+        status: HttpStatus.UNAUTHORIZED,
+        description: 'Authentication failed due to invalid or expired credentials.'
+    })
+    async googleAuthRedirect(@Req() req): Promise<any> {
+        // Process the OAuth callback, typically handled by the AuthService
+        return await this.authService.googleSignin(req.user);
+    }
 }
 

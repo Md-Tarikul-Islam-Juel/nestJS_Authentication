@@ -13,3 +13,21 @@ export function generateJwtRefreshToken(jwtService: JwtService, existingUser: an
     const payload = {...restUser};
     return jwtService.sign(payload, { expiresIn: '30d', secret: process.env.JWT_REFRESH_TOKEN_SECRET });
 }
+
+//at least one number, one uppercase, one lowe case, one special character
+export function randomPasswordGenerator(length: number): string {
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+    let code = "";
+
+    // Ensure at least one number is included
+    const randomNumber = Math.floor(Math.random() * 10);
+    code += randomNumber.toString();
+
+    // Generate the remaining characters
+    for (let i = 1; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        code += charset[randomIndex];
+    }
+
+    return code;
+}
