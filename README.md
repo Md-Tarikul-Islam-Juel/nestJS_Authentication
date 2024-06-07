@@ -154,13 +154,10 @@ JWT_REFRESH_TOKEN_EXPIRATION=30d
 <table align="center">
   <tr>
     <td align="center">
-      <h2 style="font-size: 24px; text-decoration: none;">APIs Workflow</h2>
+      <p style="font-size: 48px; font-weight: bold; margin: 0;">APIs Workflow</p>
     </td>
   </tr>
 </table>
-
-
-
 
 
 ## Signup Process
