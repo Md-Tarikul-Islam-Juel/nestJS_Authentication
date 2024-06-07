@@ -11,19 +11,23 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: configService.get('GOOGLE_CLIENT_SECRET'),
       callbackURL: configService.get('GOOGLE_CALLBACK_URL'),
       passReqToCallback: true,
-      scope: ['email', 'profile'],
+      scope: ['email', 'profile', 'openid'],
     });
   }
 
   async validate(request: any, accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
     try {
-      // Implement user validation and creation logic here
       const user = {
+        // displayName:profile.displayName,
+        // photos: profile.photos[0].value,
+        authorizerId: profile.id,
         email: profile.emails[0].value,
         firstName: profile.name.givenName,
         lastName: profile.name.familyName,
-        verified:profile.emails[0].verified,
-        // Other user data as needed
+        loginSource: "google",
+        // // Other user data as needed
+        // accessToken,
+        // refreshToken,
       };
       done(null, user);
     } catch (error) {

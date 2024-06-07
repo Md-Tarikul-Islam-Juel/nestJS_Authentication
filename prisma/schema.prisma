@@ -15,6 +15,9 @@ model User {
   firstName String?
   lastName  String?
 
+  loginSource  String  @default("default")
+  authorizerId String?
+
   verified         Boolean
   isForgetPassword Boolean
 
@@ -25,13 +28,11 @@ model User {
 }
 
 model OTP {
-  id Int @id @default(autoincrement())
-
-  email String @unique
-  otp   String
+  email    String   @id
+  otp      String
+  expiresAt DateTime
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("otp")
 }

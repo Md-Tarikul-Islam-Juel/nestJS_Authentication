@@ -31,4 +31,6 @@ export const emailIsRequired = 'Email is required';
 export const passwordIsRequired = 'Password is required';
 export const otpMustBeA6DigitNumber = 'otp must be a 6 digit number';
 export const newPasswordIsRequired = 'newPassword is required';
+export const invalidRefreshToken = 'Invalid Refresh Token';
+
 

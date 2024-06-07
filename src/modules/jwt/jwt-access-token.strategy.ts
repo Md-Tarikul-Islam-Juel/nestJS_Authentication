@@ -30,6 +30,7 @@ export class JwtAccessTokenStrategy extends PassportStrategy(Strategy, 'jwt_acce
                 firstName: true,
                 lastName: true,
                 verified: true,
+                isForgetPassword: true,
             }
         });
 

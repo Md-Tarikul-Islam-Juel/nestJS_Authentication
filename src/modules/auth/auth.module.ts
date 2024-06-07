@@ -7,16 +7,17 @@ import {JwtConfigModule} from "../jwt/jwt.module";
 import { JwtAccessTokenStrategy } from '../jwt/jwt-access-token.strategy';
 import { JwtRefreshTokenStrategy } from '../jwt/jwt-refresh-token.strategy';
 import { GoogleStrategy } from './strategy/google.strategy';
+import { FacebookStrategy } from './strategy/facebook.strategy';
 
 
 @Module({
     imports: [
         PrismaModule,
         LoggerModule,
-        JwtConfigModule
+        JwtConfigModule,
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtAccessTokenStrategy, JwtRefreshTokenStrategy, GoogleStrategy],
+    providers: [AuthService, JwtAccessTokenStrategy, JwtRefreshTokenStrategy, GoogleStrategy, FacebookStrategy],
     exports: [AuthService],
 })
 export class AuthModule {

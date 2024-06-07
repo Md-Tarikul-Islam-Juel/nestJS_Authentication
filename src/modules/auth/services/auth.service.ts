@@ -1,508 +1,492 @@
-import {MailerService} from '@nestjs-modules/mailer';
+import { MailerService } from '@nestjs-modules/mailer';
 import {
-    BadRequestException,
-    ConflictException, ForbiddenException, HttpException, HttpStatus,
-    Injectable, UnauthorizedException,
+  BadRequestException,
+  ConflictException, ForbiddenException, HttpException, HttpStatus,
+  Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException,
 } from '@nestjs/common';
 
-import {ConfigService} from '@nestjs/config';
-import {JwtService} from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import * as otpGenerator from 'otp-generator';
-import {PrismaService} from 'src/modules/prisma/prisma.service';
-import { generateJwtAccessToken, generateJwtRefreshToken, randomPasswordGenerator } from '../utils/utils';
+import { PrismaService } from 'src/modules/prisma/prisma.service';
+
 import {
-    ChangePasswordDto,
-    ForgetPasswordDto, GoogleSigninDto,
-    ResendDto,
-    SigninDto,
-    SignupDto,
-    VerificationDto,
+  ChangePasswordDto,
+  ForgetPasswordDto, OAuthDto,
+  ResendDto,
+  SigninDto,
+  SignupDto,
+  VerificationDto,
 } from '../dto/authRequest.dto';
 import {
-    ChangePasswordErrorResponseDto,
-    ChangePasswordSuccessResponseDto, RefreshTokenSuccessResponseDto,
-    ResendErrorResponseDto,
-    ResendSuccessResponseDto,
-    SigninSuccessResponseDto, SigninUnauthorizedResponseDto, SigninUserUnverifiedResponseDto,
-    SignupSuccessResponseDto,
-    SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto, VerificationSuccessResponseDto,
+  ChangePasswordErrorResponseDto,
+  ChangePasswordSuccessResponseDto,
+  ForgetPasswordErrorResponseDto,
+  ForgetPasswordSuccessResponseDto,
+  RefreshTokenSuccessResponseDto,
+  ResendErrorResponseDto,
+  ResendSuccessResponseDto,
+  SigninSuccessResponseDto,
+  SigninUnauthorizedResponseDto,
+  SigninUserUnverifiedResponseDto,
+  SignupSuccessResponseDto,
+  SignupUserAlreadyExistResponseDto,
+  VerificationErrorResponseDto,
+  VerificationSuccessResponseDto,
 } from '../dto/authRespnse.dto';
 import {
-    emailSubject,
-    failedToChangePassword, oldPasswordIsRequired,
-    otpAuthorised, otpEmailSend, otpEmailSendFail,
-    otpVerificationFailed,
-    signinSuccessful,
-    signupSuccessful,
-    unauthorized,
-    userAlreadyExists,
-    verifyYourUser, yourPasswordHasBeenUpdated
-} from "../utils/string";
+  emailSubject,
+  failedToChangePassword, oldPasswordIsRequired,
+  otpAuthorised, otpEmailSend, otpEmailSendFail,
+  otpVerificationFailed,
+  signinSuccessful,
+  signupSuccessful,
+  unauthorized,
+  userAlreadyExists,
+  verifyYourUser, yourPasswordHasBeenUpdated,
+} from '../utils/string';
 
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private readonly prisma: PrismaService,
-        private jwtAccessToken: JwtService,
-        private jwtRefreshToken: JwtService,
-        private config: ConfigService,
-        private mailerService: MailerService,
-    ) {
+  private saltRounds: number;
+  private otpExpireTime: number;
+  private otpSenderMail: string;
+  private jwtAccessTokenSecrectKey: string;
+  private jwtRefreshTokenSecrectKey: string;
+  private jwtAccessTokenExpireTime: string;
+  private jwtRefreshTokenExpireTime: string;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private jwtAccessToken: JwtService,
+    private jwtRefreshToken: JwtService,
+    private config: ConfigService,
+    private mailerService: MailerService,
+  ) {
+    this.saltRounds = Number(this.config.get<string>('BCRYPT_SALT_ROUNDS'));
+    this.otpExpireTime = Number(this.config.get<string>('OTP_EXPIRE_TIME'));
+    this.otpSenderMail = this.config.get<string>('OTP_SENDER_MAIL');
+    this.jwtAccessTokenSecrectKey = this.config.get<string>('JWT_ACCESS_TOKEN_SECRET');
+    this.jwtRefreshTokenSecrectKey = this.config.get<string>('JWT_REFRESH_TOKEN_SECRET');
+    this.jwtAccessTokenExpireTime = this.config.get<string>('JWT_ACCESS_TOKEN_EXPIRATION');
+    this.jwtRefreshTokenExpireTime = this.config.get<string>('JWT_REFRESH_TOKEN_EXPIRATION');
+  }
+
+
+  async signup(signupData: SignupDto): Promise<SignupSuccessResponseDto | SignupUserAlreadyExistResponseDto> {
+    const isUserExist = await this.findUserByEmail(signupData.email);
+
+    if (isUserExist) {
+      throw new ConflictException({ message: userAlreadyExists });
     }
 
-    async signup(signupData: SignupDto): Promise<SignupSuccessResponseDto | SignupUserAlreadyExistResponseDto> {
-        //Before create new user first here we will check user already exist or not
-        const isUserExist = await this.prisma.user.findUnique({
-            where: {
-                email: signupData.email,
-            },
-            select: {
-                email: true,
-            },
-        })
+    const hashedPassword = await bcrypt.hash(signupData.password, this.saltRounds);
+    const createdUser = await this.createUser(signupData, hashedPassword, 'default', false);//parameter(signupData, hashedPassword, loginSource, verified)
 
-        if (isUserExist) {
-            throw new ConflictException({message: userAlreadyExists});
-        }
+    await this.sendOtp(createdUser.email);
 
-        // Hash the user's password for security
-        const hashedPassword = await bcrypt.hash(signupData.password, 11);
+    // Remove sensitive fields from the user data
+    const userWithoutSensitiveData = this.removeSensitiveData(createdUser, ['password', 'verified', 'isForgetPassword']);
+    return {
+      success: true,
+      message: `${signupSuccessful} and please ${verifyYourUser}`,
+      data: userWithoutSensitiveData,
+    };
+  }
 
-        // Create a new user in the database
-        const user = await this.prisma.user.create({
-            data: {
-                ...signupData, // Spread the rest of the properties from signupData
-                verified: false,
-                isForgetPassword: false,
-                password: hashedPassword, // replace password
-            },
-            select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-            },
-        });
+  async signin(signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
+    const existingUser = await this.findUserByEmail(signinData.email);
+    this.authenticateUser(existingUser, signinData.password);
+    await this.updateForgetPasswordField(existingUser.email, false);
 
-        await this.sendOtp(signupData.email);
+    // Remove sensitive fields from the user data
+    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
+    const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
-        return {
-            success: true,
-            message: signupSuccessful,
-            data: user,
-        };
+    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
+  }
+
+  async oAuthSignin(oAuthSigninData: OAuthDto): Promise<SigninSuccessResponseDto> {
+    let existingUser = await this.findUserByEmail(oAuthSigninData.email);
+    if (!existingUser) {
+      const hashedPassword = await bcrypt.hash(this.randomPasswordGenerator(10), this.saltRounds);
+      existingUser = await this.createUser(oAuthSigninData, hashedPassword, oAuthSigninData.loginSource, true);//parameter(signupData, hashedPassword, loginSource, verified)
     }
 
-    async signin(signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
-        // Find the user by email in the database
-        const existingUser = await this.prisma.user.findUnique({
-            where: {
-                email: signinData.email,
-            },
-            select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                password: true,
-                verified: true,
-            },
-        });
+    // Remove sensitive fields from the user data
+    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
+    const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
-        // If the user is not found, throw a UnauthorizedException exception
-        if (!existingUser) {
-            throw new UnauthorizedException({message: unauthorized});
-        }
+    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
+  }
 
-        if (existingUser.verified === false) {
-            throw new ForbiddenException({message: verifyYourUser});
-        }
+  async verificationOtp(verificationData: VerificationDto): Promise<VerificationSuccessResponseDto | VerificationErrorResponseDto> {
+    const existingUser = await this.findUserByEmail(verificationData.email);
+    await this.verifyUserAndOtp(existingUser, verificationData.otp);
+    await this.updateUserVerificationStatus(existingUser.email, true);
+    await this.deleteOtp(verificationData.email);
+    const token = this.generateToken(existingUser);
+    const userWithoutSensitiveData = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
+    return this.buildOtpResponse(userWithoutSensitiveData, token);
+  }
 
-        // Compare the provided password with the hashed password
-        const passwordMatch = await bcrypt.compare(
-            signinData.password,
-            existingUser.password,
-        );
+  async resend(ResendOTPData: ResendDto): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
+    return this.sendOtp(ResendOTPData.email);
+  }
 
-        // If passwords don't match, throw a BadRequest exception
-        if (!passwordMatch) {
-            throw new UnauthorizedException({message: unauthorized});
-        }
+  async forgetPassword(forgetData: ForgetPasswordDto): Promise<ForgetPasswordSuccessResponseDto | ForgetPasswordErrorResponseDto> {
+    const existingUser = await this.findUserByEmail(forgetData.email);
+    //if verification fail then it will call callback function other wist not
+    this.verifyUserExist(existingUser, () => {
+      throw new BadRequestException({ message: otpEmailSendFail });
+    });
+    await this.updateForgetPasswordField(existingUser.email, true);
+    return this.sendOtp(existingUser.email);
+  }
 
+  async changePassword(changePasswordData: ChangePasswordDto, req: any): Promise<ChangePasswordErrorResponseDto | ChangePasswordSuccessResponseDto> {
+    const existingUser = await this.findUserByEmail(req.user.email);
+    await this.verifyUserAndChangePassword(existingUser, changePasswordData, req);
+    await this.updatePassword(existingUser, changePasswordData.newPassword);
+    return {
+      success: true,
+      message: yourPasswordHasBeenUpdated,
+    };
+  }
 
-        if (existingUser.verified === true) {
-            // Return the JWT token directly
-            const accessToken = generateJwtAccessToken(this.jwtAccessToken, existingUser);
-            const refreshToken = generateJwtRefreshToken(this.jwtRefreshToken, existingUser);
+  async refreshToken(req: any): Promise<RefreshTokenSuccessResponseDto> {
+    const existingUser = await this.findUserByEmail(req.user.email);
 
-            const {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                password,
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                verified,
-                ...restUser
-            } = existingUser;
-            const userWithoutSomeInfo = {...restUser};
+    //if verification fail then it will call callback function other wist not
+    this.verifyUserExist(existingUser, () => {
+      throw new HttpException('Invalid Refresh Token', HttpStatus.NOT_FOUND);
+    });
 
-            return {
-                success: true,
-                message: signinSuccessful,
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                data: {...userWithoutSomeInfo},
-            };
-        }
+    // Remove sensitive fields from the user data
+    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
+
+    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    return { success: true, accessToken: token.accessToken };
+  }
+
+  //-----------------------------------------------------------------------------
+  //-------------------------------reuse method----------------------------------
+  //-----------------------------------------------------------------------------
+  //OTP generate and email send
+  private async sendOtp(email: string): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
+    // Find the user by email in the database
+    // if user not found then no need to send email
+    const existingUser = await this.findUserByEmail(email);
+
+    // If the user is not found, throw a NotFound exception
+    if (!existingUser) {
+      throw new BadRequestException({ message: otpEmailSendFail });
     }
 
-    async googleSignin(googleSigninData: GoogleSigninDto):Promise<SigninSuccessResponseDto> {
-        try{
-            // Find the user by email in the database
-            let existingUser = await this.prisma.user.findUnique({
-                where: {
-                    email: googleSigninData.email,
-                },
-                select: {
-                    id: true,
-                    email: true,
-                    firstName: true,
-                    lastName: true,
-                },
-            });
+    const otp = this.generateOtp(6);
+    await this.storeOtp(email, otp);
+    await this.sendOtpEmail(email, otp, this.otpExpireTime);
 
-            // If the user doesn't exist, create a new user
-            if (!existingUser) {
-                // Hash the new randomly generated(10 character) password for security
-                //10 character password
-                const hashedPassword = await bcrypt.hash(randomPasswordGenerator(10), 11);
+    return {
+      success: true,
+      message: otpEmailSend,
+    };
+  }
 
-                // Create a new user in the database
-                existingUser = await this.prisma.user.create({
-                    data: {
-                        ...googleSigninData, // Spread the rest of the properties from signupData
-                        isForgetPassword: false,
-                        password: hashedPassword, // replace password
-                    },
-                    select: {
-                        id: true,
-                        email: true,
-                        firstName: true,
-                        lastName: true,
-                    },
-                });
-            }
+  private async findUserByEmail(email: string): Promise<{
+    id: number,
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    verified: boolean,
+    isForgetPassword: boolean,
+  }> {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        password: true,
+        verified: true,
+        isForgetPassword: true,
+      },
+    });
+  }
 
-            // return the sign-in data
-            const accessToken = generateJwtAccessToken(this.jwtAccessToken, existingUser);
-            const refreshToken = generateJwtRefreshToken(this.jwtRefreshToken, existingUser);
+  private async createUser(userData: any, password: string, loginSource: string, verified: boolean): Promise<{
+    id: number,
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    verified: boolean,
+    isForgetPassword: boolean,
+  }> {
+    return this.prisma.user.create({
+      data: {
+        ...userData,
+        loginSource: loginSource,
+        verified: verified,
+        isForgetPassword: false,
+        password: password,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        verified: true,
+        password: true,
+        isForgetPassword: true,
+      },
+    });
+  }
 
-            return {
-                success: true,
-                message: signinSuccessful,
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                data:  existingUser,
-            };
-        }catch(e){console.log(e)}
+  private authenticateUser(user: any, password: string): void {
+    if (!user) {
+      throw new UnauthorizedException({ message: unauthorized });
+    }
+    if (!bcrypt.compareSync(password, user.password)) {
+      throw new UnauthorizedException({ message: unauthorized });
+    }
+    if (!user.verified) {
+      throw new ForbiddenException({ message: verifyYourUser });
+    }
+  }
+
+  private buildSigninResponse(user: any, token: any): {
+    success: boolean,
+    message: string,
+    accessToken: string,
+    refreshToken: string,
+    data: any
+  } {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, verified, ...restUser } = user;
+    return {
+      success: true,
+      message: signinSuccessful,
+      accessToken: token.accessToken,
+      refreshToken: token.refreshToken,
+      data: restUser,
+    };
+  }
+
+  private async verifyUserAndOtp(user: any, otp: string) {
+    //if verification fail then it will call callback function other wist not
+    this.verifyUserExist(user, () => {
+      throw new NotFoundException(otpVerificationFailed);
+    });
+
+    await this.verifyOtp(user.email, otp);
+
+    // const savedOtp = await this.prisma.OTP.findUnique({ where: { email: user.email }, select: { otp: true } });
+    //
+    // if (!savedOtp || savedOtp.otp !== otp) {
+    //   throw new UnauthorizedException({ message: otpVerificationFailed });
+    // }
+  }
+
+  private verifyUserExist(user: any, callback: () => void): void {
+    if (!user) {
+      callback();
+    }
+  }
+
+  private async deleteOtp(email: string) {
+    return this.prisma.OTP.delete({ where: { email } });
+  }
+
+  private buildOtpResponse(user: any, token: any): {
+    success: boolean,
+    message: string,
+    accessToken: string,
+    refreshToken: string,
+    data: any
+  } {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...restUser } = user;
+    return {
+      success: true,
+      message: otpAuthorised,
+      accessToken: token.accessToken,
+      refreshToken: token.refreshToken,
+      data: restUser,
+    };
+  }
+
+  private async updateForgetPasswordField(email: string, boolValue: boolean): Promise<any> {
+    return this.prisma.user.update({
+      where: { email },
+      data: { isForgetPassword: boolValue },
+    });
+  }
+
+  private async updateUserVerificationStatus(email: string, verified: boolean): Promise<void> {
+    await this.prisma.user.update({
+      where: {
+        email,
+      },
+      data: {
+        verified,
+      },
+    });
+  }
+
+  private async verifyUserAndChangePassword(existingUser: any, changePasswordData: ChangePasswordDto, req: any) {
+    if (!existingUser) {
+      throw new BadRequestException({ message: failedToChangePassword });
+    } else if (req.user.isForgetPassword === true && existingUser.isForgetPassword === true && existingUser.verified === true) {
+      // ================================
+      // this block for Forget password
+      // ================================
+      return;
+    } else if (req.user.isForgetPassword === false && existingUser.isForgetPassword === false && existingUser.verified === true) {
+      // ================================
+      // this block for change password
+      // ================================
+
+      if (!changePasswordData.oldPassword) {
+        throw new BadRequestException({ message: oldPasswordIsRequired });
+      }
+
+      // Compare the provided password with the hashed password
+      const passwordMatch = await bcrypt.compare(
+        changePasswordData.oldPassword,
+        existingUser.password,
+      );
+
+      // If passwords don't match,
+      if (!passwordMatch) {
+        throw new BadRequestException({ message: failedToChangePassword });
+      } else if (passwordMatch) {
+        return;
+      }
     }
 
-    async verificationOtp(
-        EmailVerificationByOTPData: VerificationDto,
-    ): Promise<VerificationSuccessResponseDto | VerificationErrorResponseDto> {
-        // Find the user by email in the database
-        // if user not found then no need to send email
-        const existingUser = await this.prisma.user.findUnique({
-            where: {
-                email: EmailVerificationByOTPData.email,
-            },
-            select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-            },
-        });
+    throw new BadRequestException({ message: failedToChangePassword });
+  }
 
-        // If the user is not found, we will not throw a UnauthorizedException exception because security issues
-        if (!existingUser) {
-            throw new UnauthorizedException({message: otpVerificationFailed});
-        }
+  private async updatePassword(user: any, newPassword: string): Promise<{
+    password: string;
+    isForgetPassword: boolean
+  }> {
+    const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, isForgetPassword: false },
+    });
+  }
 
-        //now we will check OTP exist in the database for the particulate user
-        const otpRecord = await this.prisma.OTP.findUnique({
-            where: {email: EmailVerificationByOTPData.email},
-            select: {
-                otp: true
-            }
-        });
+  private removeSensitiveData(obj: any, sensitiveFields: string[]): any {
+    const filteredObj = { ...obj };
 
-        if (otpRecord) {
-            //now we will compare the database OTP and user provided OTP
-            if (otpRecord.otp.toString() === EmailVerificationByOTPData.otp) {
-                //update user is verified
-                await this.prisma.user.update({
-                    where: {
-                        email: EmailVerificationByOTPData.email,
-                    },
-                    data: {
-                        verified: true, // Update the verified field to true
-                    },
-                });
+    sensitiveFields.forEach(field => {
+      delete filteredObj[field];
+    });
 
-                // Return the JWT token directly
-                const accessToken = generateJwtAccessToken(this.jwtAccessToken, existingUser);
-                const refreshToken = generateJwtRefreshToken(this.jwtRefreshToken, existingUser);
+    return filteredObj;
+  }
 
+  private generateOtp(length: number): string {
+    return otpGenerator.generate(length, {
+      digits: true,
+      upperCase: false,
+      lowercase: false,
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+  }
 
-                //after update delete the OTP here
-                await this.prisma.OTP.delete({
-                    where: {email: EmailVerificationByOTPData.email},
-                });
+  private async storeOtp(email: string, otp: string): Promise<void> {
+    const expiryTime = new Date(Date.now() + this.otpExpireTime * 60 * 1000); // 10 minutes expiry
 
-                return {
-                    success: true,
-                    message: otpAuthorised,
-                    accessToken: accessToken,
-                    refreshToken: refreshToken,
-                    data: existingUser,
-                };
-            } else {
-                throw new UnauthorizedException({message: otpVerificationFailed});
-            }
-        } else {
-            throw new UnauthorizedException({message: otpVerificationFailed});
-        }
+    await this.prisma.OTP.upsert({
+      where: { email },
+      update: { otp, expiresAt: expiryTime },
+      create: { email, otp, expiresAt: expiryTime },
+    });
+  }
+
+  private async sendOtpEmail(email: string, otp: string, expireTime: number): Promise<void> {
+    try {
+      const mailOptions = {
+        to: email,
+        from: this.otpSenderMail,
+        subject: emailSubject,
+        text: `Your OTP code is: ${otp}. It is valid for ${expireTime} minutes.`,
+      };
+
+      await this.mailerService.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Failed to send OTP email:', error);
+      throw new InternalServerErrorException('Failed to send OTP email.');
+    }
+  }
+
+  private async verifyOtp(email: string, otp: string): Promise<void> {
+    const otpRecord = await this.prisma.OTP.findUnique({
+      where: { email },
+      select: { otp: true, expiresAt: true },
+    });
+
+    if (!otpRecord || otpRecord.otp !== otp || new Date() > otpRecord.expiresAt) {
+      throw new UnauthorizedException('Invalid or expired OTP.');
+    }
+  }
+
+  // Generate accessToken and refreshToken
+  private generateToken(user: any): { accessToken: string; refreshToken: string } {
+    // Remove sensitive fields from the user data
+    const userWithoutSensitiveData = this.removeSensitiveData(user, ['password']);
+
+    const accessToken = this.generateJwtAccessToken(this.jwtAccessToken, userWithoutSensitiveData);
+    const refreshToken = this.generateJwtRefreshToken(this.jwtRefreshToken, userWithoutSensitiveData);
+
+    return { accessToken, refreshToken };
+  }
+
+  private generateJwtAccessToken(jwtService: JwtService, existingUser: any): string {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, updatedAt, createdAt, ...restUser } = existingUser;
+    const payload = { ...restUser };
+    return jwtService.sign(payload, {
+      expiresIn: this.jwtAccessTokenExpireTime,
+      secret: this.jwtAccessTokenSecrectKey,
+    });
+  }
+
+  private generateJwtRefreshToken(jwtService: JwtService, existingUser: any): string {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, updatedAt, createdAt, ...restUser } = existingUser;
+    const payload = { ...restUser };
+    return jwtService.sign(payload, {
+      expiresIn: this.jwtRefreshTokenExpireTime,
+      secret: this.jwtRefreshTokenSecrectKey,
+    });
+  }
+
+  private randomPasswordGenerator(length: number): string {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+    let code = '';
+
+    const randomNumber = Math.floor(Math.random() * 10);
+    code += randomNumber.toString();
+
+    for (let i = 1; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      code += charset[randomIndex];
     }
 
-    async resend(ResendOTPData: ResendDto): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
-        return this.sendOtp(ResendOTPData.email);
-    }
-
-    async forgetPassword(
-        ForgetPasswordSendEmailForOTPData: ForgetPasswordDto,
-    ) {
-        const existingUser = await this.prisma.user.findFirst({
-            where: {
-                email: ForgetPasswordSendEmailForOTPData.email,
-            },
-            select: {
-                email: true
-            }
-        });
-
-        // If the user is not found
-        if (!existingUser) {
-            throw new BadRequestException({message: otpEmailSendFail})
-        } else {
-            //update user is isForgetPassword
-            await this.prisma.user.update({
-                where: {
-                    email: ForgetPasswordSendEmailForOTPData.email,
-                },
-                data: {
-                    isForgetPassword: true, // Update the verified field to true
-                },
-            });
-
-            return this.sendOtp(ForgetPasswordSendEmailForOTPData.email);
-        }
-    }
-
-    async ChangePassword(ChangePasswordData: ChangePasswordDto, req: any): Promise<ChangePasswordSuccessResponseDto | ChangePasswordErrorResponseDto> {
-        // Find the user by jwt token details in the database
-        const existingUser = await this.prisma.user.findUnique({
-            where: {
-                ...req.user,
-            },
-            select: {
-                isForgetPassword: true,
-                verified: true,
-                password: true,
-            }
-        })
-
-
-        // If the user is not found,
-        if (!existingUser) {
-            throw new BadRequestException({message: failedToChangePassword});
-        }
-
-        if (
-            req.user.isForgetPassword === true &&
-            existingUser.isForgetPassword === true
-        ) {
-            //================================
-            // this block for Forget password
-            //================================
-            // Hash the user's password for security
-            const hashedPassword = await bcrypt.hash(
-                ChangePasswordData.newPassword,
-                11,
-            );
-
-            //update user if is verified
-            //verified by jwt token details in the database
-            await this.prisma.user.update({
-                where: {
-                    ...req.user,
-                },
-                data: {
-                    password: hashedPassword, // Update the verified field to true
-                    isForgetPassword: false,
-                },
-            });
-
-            return {
-                success: true,
-                message: yourPasswordHasBeenUpdated,
-            };
-        } else if (
-            req.user.isForgetPassword === false &&
-            existingUser.isForgetPassword === false
-        ) {
-            //================================
-            // this block for changed password
-            //================================
-            if (!ChangePasswordData.oldPassword) {
-                throw new BadRequestException({message: oldPasswordIsRequired});
-            }
-
-            // Compare the provided password with the hashed password
-            const passwordMatch = await bcrypt.compare(
-                ChangePasswordData.oldPassword,
-                existingUser.password,
-            );
-
-            // If passwords don't match,
-            if (!passwordMatch) {
-                throw new BadRequestException({message: failedToChangePassword});
-            }
-
-            if (existingUser.verified === true) {
-                // Hash the user's password for security
-                const hashedPassword = await bcrypt.hash(
-                    ChangePasswordData.newPassword,
-                    11,
-                );
-
-                //update user if is verified
-                //verified by jwt token details in the database
-                await this.prisma.user.update({
-                    where: {
-                        ...req.user,
-                    },
-                    data: {
-                        password: hashedPassword, // Update the verified field to true
-                    },
-                });
-
-                return {
-                    success: true,
-                    message: yourPasswordHasBeenUpdated,
-                };
-            } else {
-                //if user not verified
-                throw new ForbiddenException({message: verifyYourUser});
-
-            }
-        } else {
-            // user is not authorized to change password because user not called forget password api-> verify api
-            throw new BadRequestException({message: failedToChangePassword});
-        }
-    }
-
-    async refreshToken(req:any):Promise<RefreshTokenSuccessResponseDto>{
-        try {
-            const user = await this.prisma.user.findUnique({
-                where: {
-                    email: req.user.email,
-                },
-                select: {
-                    id: true,
-                    email: true,
-                    firstName: true,
-                    lastName: true,
-                },
-            });
-
-            if (!user) {
-                throw new HttpException('Invalid Refresh Token', HttpStatus.NOT_FOUND);
-            }
-
-            const accessToken = generateJwtAccessToken(this.jwtAccessToken, user);
-
-            return {success: true, accessToken: accessToken};
-        } catch (error) {
-            throw new HttpException('An error occurred while retrieving user data.', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    //-----------------------------------------------------------------------------
-    //------------------------------Common function--------------------------------
-    //-----------------------------------------------------------------------------
-    //OTP generate and email send
-    private async sendOtp(email: string): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
-        // Find the user by email in the database
-        // if user not found then no need to send email
-        const existingUser = await this.prisma.user.findUnique({
-            where: {
-                email,
-            },
-        });
-
-        // If the user is not found, throw a NotFound exception
-        if (!existingUser) {
-            throw new BadRequestException({message: otpEmailSendFail})
-        }
-
-        const otp = otpGenerator.generate(6, {
-            digits: true,
-            upperCase: false,
-            lowercase: false,
-            upperCaseAlphabets: false,
-            lowerCaseAlphabets: false,
-            specialChars: false,
-        });
-
-        // retrieved the OTP record from the database
-        const otpRecord = await this.prisma.OTP.findUnique({
-            where: {email},
-        });
-
-        if (otpRecord) {
-            //delete OTP here
-            await this.prisma.OTP.delete({
-                where: {email},
-            });
-
-            // Store OTP in the database using Prisma
-            await this.prisma.OTP.create({
-                data: {
-                    email,
-                    otp,
-                },
-            });
-        } else if (!otpRecord) {
-            // Store OTP in the database using Prisma
-            await this.prisma.OTP.create({
-                data: {
-                    email,
-                    otp,
-                },
-            });
-        }
-
-        // Send OTP via email (your email sending logic here)
-        await this.mailerService.sendMail({
-            to: email,
-            from: this.config.get('MAIL_USER'),
-            subject: emailSubject,
-            text: otp,
-        });
-        return {
-            success: true,
-            message: otpEmailSend,
-        };
-    }
+    return code;
+  }
 }

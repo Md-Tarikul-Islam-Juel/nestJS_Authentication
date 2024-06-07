@@ -5,10 +5,13 @@ version: '3.8'
 services:
   Auth-DB:
     image: postgres:13
-    container_name: nest-Auth-DB
+    container_name: ${CONTAINER_NAME}
     environment:
-      POSTGRES_DB: nest
-      POSTGRES_USER: juel
-      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     ports:
-      - '5432:5432'
+      - '${DATABASE_PORT}:5432'
+    env_file:
+      - .env
+

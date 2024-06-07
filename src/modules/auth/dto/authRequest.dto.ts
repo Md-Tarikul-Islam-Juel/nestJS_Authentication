@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 import {ApiProperty} from "@nestjs/swagger";
 import {
     emailIsRequired,
@@ -47,26 +47,27 @@ export class SigninDto {
     password: string;
 }
 
-
-export class GoogleSigninDto {
-    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
-    @IsNotEmpty({message: emailIsRequired})
+export class OAuthDto {
+    @ApiProperty({ example: 'example@gmail.com', description: 'The email address of the user' })
+    @IsEmail({}, { message: 'Email must be a valid email address' })
+    @IsNotEmpty({ message: 'Email is required' })
     email: string;
 
-    @ApiProperty({example: 'John', description: 'The first name of the user', required: false})
+    @ApiProperty({ example: 'John', description: 'The first name of the user', required: false })
     @IsString()
     @IsOptional()
     firstName: string;
 
-    @ApiProperty({example: 'Doe', description: 'The last name of the user', required: false})
+    @ApiProperty({ example: 'Doe', description: 'The last name of the user', required: false })
     @IsString()
     @IsOptional()
     lastName: string;
 
-    @ApiProperty({example: 'true', description: 'This is a boolean value'})
-    @IsBoolean()
-    @IsNotEmpty({message: 'must be boolean data'})
-    verified: boolean;
+    @ApiProperty({ example: 'google', description: 'The login source of the user (google or facebook)', required: false })
+    @IsString()
+    @IsOptional()
+    @IsIn(['google', 'facebook'], { message: 'Login source must be either google or facebook' })
+    loginSource: string = 'google'; // Default value set to 'google'
 }
 
 // =================================================================

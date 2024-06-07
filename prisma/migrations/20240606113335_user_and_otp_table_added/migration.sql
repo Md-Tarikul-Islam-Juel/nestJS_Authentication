@@ -5,6 +5,8 @@ CREATE TABLE "users" (
     "password" TEXT NOT NULL,
     "firstName" TEXT,
     "lastName" TEXT,
+    "loginSource" TEXT NOT NULL DEFAULT 'default',
+    "authorizerId" TEXT,
     "verified" BOOLEAN NOT NULL,
     "isForgetPassword" BOOLEAN NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -15,17 +17,13 @@ CREATE TABLE "users" (
 
 -- CreateTable
 CREATE TABLE "otp" (
-    "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
     "otp" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "otp_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "otp_pkey" PRIMARY KEY ("email")
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "otp_email_key" ON "otp"("email");
