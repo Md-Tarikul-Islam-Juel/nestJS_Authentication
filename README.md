@@ -46,14 +46,23 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 
 Below are the key authentication API endpoints for this project:
 
-- **Sign-Up Endpoint:** `{{url}}/auth/signup`
-- **Sign-In Endpoint:** `{{url}}/auth/signin`
-- **Email Verification Endpoint:** `{{url}}/auth/verify`
-- **Resend OTP Endpoint:** `{{url}}/auth/resend`
-- **Forget Password Endpoint:** `{{url}}/auth/forget-password`
-- **Change Password Endpoint:** `{{url}}/auth/change-password`
-- **Refresh Token Endpoint:** `{{url}}/auth/refresh-token`
-- **User Information Endpoint:** `{{url}}/user/me`
+### Auth
+
+- **Sign-Up Endpoint:** `{{url}}/auth/signup` - Sign up user
+- **Sign-In Endpoint:** `{{url}}/auth/signin` - Sign in user
+- **Verify OTP Endpoint:** `{{url}}/auth/verify` - Verify OTP
+- **Resend OTP Endpoint:** `{{url}}/auth/resend` - Resend OTP email
+- **Forget Password Endpoint:** `{{url}}/auth/forget-password` - Forget password OTP email send
+- **Change Password Endpoint:** `{{url}}/auth/change-password` - Change user password
+- **Refresh Token Endpoint:** `{{url}}/auth/refresh-token` - Refresh access token
+- **Start Google OAuth Flow Endpoint:** `{{url}}/auth/google` - Start Google OAuth flow
+- **Google OAuth Callback Endpoint:** `{{url}}/auth/google/callback` - Google OAuth callback
+- **Start Facebook OAuth Flow Endpoint:** `{{url}}/auth/facebook` - Start Facebook OAuth flow
+- **Facebook OAuth Callback Endpoint:** `{{url}}/auth/facebook/callback` - Facebook OAuth callback
+
+### User
+
+- **Get User Data Endpoint:** `{{url}}/user/me` - Get user data
 
 Replace `{{url}}` with the appropriate base URL of your API.
 
