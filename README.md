@@ -35,7 +35,18 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 | **OAuth(Google sign-in)**  | Allowing clients to sign-in with google.(Note: config your google cloud console to get credentials) |
 | **OAuth(Facebook sign-in)**| Allowing clients to sign-in with Facebook.(Note: config your meta developer console to get credentials) |
 
+## 🌟 Technology Stack: Built with Modern Tools
 
+- **Framework:** [NestJS](https://nestjs.com/)
+- **Database:** [PostgreSQL](https://www.postgresql.org/)
+- **ORM:** [Prisma](https://www.prisma.io)
+- **DTO Validation:** [class-validator](https://github.com/typestack/class-validator)
+- **Token Management:** [Passport](http://www.passportjs.org/) with [JWT](https://jwt.io/)
+- **OAuth:** [Google](https://developers.google.com/identity/protocols/oauth2) and [Facebook](https://developers.facebook.com/docs/facebook-login/)
+- **API Documentation:** [Swagger](https://swagger.io/)
+- **Database Environment:** Dockerized PostgreSQL
+
+  
 
 ## 📖 Swagger Documents:
 
