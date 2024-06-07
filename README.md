@@ -150,9 +150,16 @@ JWT_REFRESH_TOKEN_EXPIRATION=30d
 
 
 <br/><br/><br/>
-<center>
-    <h1 style="text-align: center; border: none; text-decoration: none; margin: 0;">APIs Workflow</h1>
-</center>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <h2 style="font-size: 24px; text-decoration: none;">APIs Workflow</h2>
+    </td>
+  </tr>
+</table>
+
+
 
 
 
