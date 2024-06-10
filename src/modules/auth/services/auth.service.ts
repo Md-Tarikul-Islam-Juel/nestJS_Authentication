@@ -38,15 +38,15 @@ import {
 } from '../dto/authRespnse.dto';
 import {
   emailSubject,
-  failedToChangePassword, oldPasswordIsRequired,
-  otpAuthorised, otpEmailSend, otpEmailSendFail,
-  otpVerificationFailed,
+  failedToChangePassword, failedToSendOTPEmail, invalidOrExpiredOTP, oldPasswordIsRequired,
+  otpAuthorised, otpEmailSend, otpEmailSendFail, otpVerificationFailed,
   signinSuccessful,
   signupSuccessful,
   unauthorized,
-  userAlreadyExists,
+  userAlreadyExists, userNotFound,
   verifyYourUser, yourPasswordHasBeenUpdated,
 } from '../utils/string';
+import { LoggerService } from '../../logger/logger.service';
 
 
 @Injectable()
@@ -65,6 +65,7 @@ export class AuthService {
     private jwtRefreshToken: JwtService,
     private config: ConfigService,
     private mailerService: MailerService,
+    private logger: LoggerService,
   ) {
     this.saltRounds = Number(this.config.get<string>('BCRYPT_SALT_ROUNDS'));
     this.otpExpireTime = Number(this.config.get<string>('OTP_EXPIRE_TIME'));
@@ -80,6 +81,11 @@ export class AuthService {
     const isUserExist = await this.findUserByEmail(signupData.email);
 
     if (isUserExist) {
+      this.logger.error({
+        message: userAlreadyExists,
+        details: signupData,
+      });
+
       throw new ConflictException({ message: userAlreadyExists });
     }
 
@@ -100,13 +106,14 @@ export class AuthService {
   async signin(signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
     const existingUser = await this.findUserByEmail(signinData.email);
     this.authenticateUser(existingUser, signinData.password);
-    await this.updateForgetPasswordField(existingUser.email, false);
 
+    await this.updateForgetPasswordField(existingUser.email, false);
     // Remove sensitive fields from the user data
     const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
     const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
     const token = this.generateToken(userWithoutSensitiveDataForToken);
+
     return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
   }
 
@@ -141,10 +148,11 @@ export class AuthService {
 
   async forgetPassword(forgetData: ForgetPasswordDto): Promise<ForgetPasswordSuccessResponseDto | ForgetPasswordErrorResponseDto> {
     const existingUser = await this.findUserByEmail(forgetData.email);
-    //if verification fail then it will call callback function other wist not
+    //if verification fail then it will call callback function other wist nots
     this.verifyUserExist(existingUser, () => {
+      //Error log already handle in verifyUserExist()
       throw new BadRequestException({ message: otpEmailSendFail });
-    });
+    }, otpEmailSendFail);
     await this.updateForgetPasswordField(existingUser.email, true);
     return this.sendOtp(existingUser.email);
   }
@@ -164,8 +172,9 @@ export class AuthService {
 
     //if verification fail then it will call callback function other wist not
     this.verifyUserExist(existingUser, () => {
-      throw new HttpException('Invalid Refresh Token', HttpStatus.NOT_FOUND);
-    });
+      //Error log already handle in verifyUserExist()
+      throw new HttpException(userNotFound, HttpStatus.NOT_FOUND);
+    }, userNotFound);
 
     // Remove sensitive fields from the user data
     const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
@@ -185,6 +194,10 @@ export class AuthService {
 
     // If the user is not found, throw a NotFound exception
     if (!existingUser) {
+      this.logger.error({
+        message: `${otpEmailSendFail} because user not exist`,
+        details: email,
+      });
       throw new BadRequestException({ message: otpEmailSendFail });
     }
 
@@ -251,13 +264,24 @@ export class AuthService {
   }
 
   private authenticateUser(user: any, password: string): void {
+    // Note: here bcrypt.compareSync(password, user.password) slow down the login process
     if (!user) {
+      this.logger.error({
+        message: `${unauthorized} because user not exist`,
+        details: this.removeSensitiveData(user, ['password']),
+      });
       throw new UnauthorizedException({ message: unauthorized });
-    }
-    if (!bcrypt.compareSync(password, user.password)) {
+    } else if (!bcrypt.compareSync(password, user.password)) {
+      this.logger.error({
+        message: `${unauthorized} because user password not matched`,
+        details: this.removeSensitiveData(user, ['password']),
+      });
       throw new UnauthorizedException({ message: unauthorized });
-    }
-    if (!user.verified) {
+    } else if (!user.verified) {
+      this.logger.error({
+        message: `${verifyYourUser}`,
+        details: this.removeSensitiveData(user, ['password']),
+      });
       throw new ForbiddenException({ message: verifyYourUser });
     }
   }
@@ -283,20 +307,19 @@ export class AuthService {
   private async verifyUserAndOtp(user: any, otp: string) {
     //if verification fail then it will call callback function other wist not
     this.verifyUserExist(user, () => {
+      //Error log already handle in verifyUserExist()
       throw new NotFoundException(otpVerificationFailed);
-    });
+    }, otpVerificationFailed);
 
     await this.verifyOtp(user.email, otp);
-
-    // const savedOtp = await this.prisma.OTP.findUnique({ where: { email: user.email }, select: { otp: true } });
-    //
-    // if (!savedOtp || savedOtp.otp !== otp) {
-    //   throw new UnauthorizedException({ message: otpVerificationFailed });
-    // }
   }
 
-  private verifyUserExist(user: any, callback: () => void): void {
+  private verifyUserExist(user: any, callback: () => void, message: string): void {
     if (!user) {
+      this.logger.error({
+        message: `${message}`,
+        details: this.removeSensitiveData(user, ['password']),
+      });
       callback();
     }
   }
@@ -343,6 +366,10 @@ export class AuthService {
 
   private async verifyUserAndChangePassword(existingUser: any, changePasswordData: ChangePasswordDto, req: any) {
     if (!existingUser) {
+      this.logger.error({
+        message: `${failedToChangePassword} because user not exist`,
+        details: this.removeSensitiveData(existingUser, ['password']),
+      });
       throw new BadRequestException({ message: failedToChangePassword });
     } else if (req.user.isForgetPassword === true && existingUser.isForgetPassword === true && existingUser.verified === true) {
       // ================================
@@ -355,6 +382,10 @@ export class AuthService {
       // ================================
 
       if (!changePasswordData.oldPassword) {
+        this.logger.error({
+          message: `${oldPasswordIsRequired}`,
+          details: this.removeSensitiveData(existingUser, ['password']),
+        });
         throw new BadRequestException({ message: oldPasswordIsRequired });
       }
 
@@ -366,12 +397,20 @@ export class AuthService {
 
       // If passwords don't match,
       if (!passwordMatch) {
+        this.logger.error({
+          message: `${failedToChangePassword} because password not matched`,
+          details: this.removeSensitiveData(existingUser, ['password']),
+        });
         throw new BadRequestException({ message: failedToChangePassword });
       } else if (passwordMatch) {
         return;
       }
     }
 
+    this.logger.error({
+      message: `${failedToChangePassword}`,
+      details: this.removeSensitiveData(existingUser, ['password']),
+    });
     throw new BadRequestException({ message: failedToChangePassword });
   }
 
@@ -428,8 +467,12 @@ export class AuthService {
 
       await this.mailerService.sendMail(mailOptions);
     } catch (error) {
-      console.error('Failed to send OTP email:', error);
-      throw new InternalServerErrorException('Failed to send OTP email.');
+      this.logger.error({
+        message: `${failedToSendOTPEmail}`,
+        details: email,
+      });
+      console.error(failedToSendOTPEmail, error);
+      throw new InternalServerErrorException(failedToSendOTPEmail);
     }
   }
 
@@ -440,7 +483,11 @@ export class AuthService {
     });
 
     if (!otpRecord || otpRecord.otp !== otp || new Date() > otpRecord.expiresAt) {
-      throw new UnauthorizedException('Invalid or expired OTP.');
+      this.logger.error({
+        message: `${invalidOrExpiredOTP}`,
+        details: email,
+      });
+      throw new UnauthorizedException(invalidOrExpiredOTP);
     }
   }
 

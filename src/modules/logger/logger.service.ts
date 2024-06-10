@@ -16,12 +16,10 @@ export class LoggerService {
         format.timestamp({
           format: () => moment().tz('UTC').format('YYYY-MM-DD HH:mm:ss Z'),
         }),
-        // format.align(),
-        // format.metadata(),
-        // format.errors(),
-        format.printf(({ timestamp, level, message, context }) => {
+        format.printf(({ timestamp, level, message, context, details }) => {
           const contextString = context ? `[${context}] ` : '';
-          return `${timestamp} [${level}] ${contextString}${message}`;
+          const detailsString = details ? `Details: ${JSON.stringify(details)}` : '';
+          return `${timestamp} [${level}] ${contextString}${message} ${detailsString}`;
         }),
       ),
       transports: [
@@ -32,18 +30,38 @@ export class LoggerService {
     });
   }
 
+  private getMethodName(depth: number = 3): string {
+    const stack = new Error().stack;
+    const stackLines = stack?.split('\n');
+    if (!stackLines || stackLines.length <= depth) {
+      return 'UnknownMethod';
+    }
+    const methodLine = stackLines[depth].trim();
+    return methodLine.split(' ')[1];
+  }
+
+  private buildContext(depth: number = 3): string {
+    return `${this.getMethodName(depth + 1)}()`;
+  }
+
   // Log an information message
-  info(message: string, context?: string) {
-    this.logger.info(message, { context });
+  info(log: { message: string, details?: any }, context?: string) {
+    const dynamicContext = this.buildContext();
+    this.logger.info({ ...log, context: context || dynamicContext });
   }
 
   // Log an error message
-  error(message: string, context?: string) {
-    this.logger.error(message, { context });
+  error(log: { message: string, details?: any }, context?: string) {
+    const dynamicContext = this.buildContext();
+    this.logger.error({ ...log, context: context || dynamicContext });
   }
 
   // Log a warning message
-  warn(message: string, context?: string) {
-    this.logger.warn(message, { context });
+  warn(log: { message: string, details?: any }, context?: string) {
+    const dynamicContext = this.buildContext();
+    this.logger.warn({ ...log, context: context || dynamicContext });
   }
 }
+
+
+

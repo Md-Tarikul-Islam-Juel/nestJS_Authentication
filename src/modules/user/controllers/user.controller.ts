@@ -1,5 +1,4 @@
-import {Controller, Get, HttpCode, HttpStatus, Inject, Post, Req, UseGuards} from '@nestjs/common';
-import {LoggerService} from "../../logger/logger.service"
+import {Controller, Get, HttpCode, HttpStatus, Inject, Req, UseGuards} from '@nestjs/common';
 import {AuthGuard} from "@nestjs/passport";
 import {ME} from "../utils/string";
 import {UserService} from "../services/user.service";
@@ -13,7 +12,6 @@ export class UserController {
     constructor(
         @Inject(UserService)
         private readonly userService: UserService,
-        private logger: LoggerService,
     ) {
     }
 

@@ -32,5 +32,6 @@ export const passwordIsRequired = 'Password is required';
 export const otpMustBeA6DigitNumber = 'otp must be a 6 digit number';
 export const newPasswordIsRequired = 'newPassword is required';
 export const invalidRefreshToken = 'Invalid Refresh Token';
-
-
+export const userNotFound = 'User Not Found';
+export const failedToSendOTPEmail = 'Failed to send OTP email';
+export const invalidOrExpiredOTP = 'Invalid or expired OTP';
