@@ -8,9 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-
 import * as otpGenerator from 'otp-generator';
-import { PrismaService } from 'src/modules/prisma/prisma.service';
+
 
 import {
   ChangePasswordDto,
@@ -47,12 +46,13 @@ import {
   verifyYourUser, yourPasswordHasBeenUpdated,
 } from '../utils/string';
 import { LoggerService } from '../../logger/logger.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 
 @Injectable()
 export class AuthService {
   private saltRounds: number;
-  private otpExpireTime: number;
+  otpExpireTime: number;
   private otpSenderMail: string;
   private jwtAccessTokenSecrectKey: string;
   private jwtRefreshTokenSecrectKey: string;
@@ -137,7 +137,8 @@ export class AuthService {
     await this.verifyUserAndOtp(existingUser, verificationData.otp);
     await this.updateUserVerificationStatus(existingUser.email, true);
     await this.deleteOtp(verificationData.email);
-    const token = this.generateToken(existingUser);
+    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
+    const token = this.generateToken(userWithoutSensitiveDataForToken);
     const userWithoutSensitiveData = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
     return this.buildOtpResponse(userWithoutSensitiveData, token);
   }
@@ -187,7 +188,7 @@ export class AuthService {
   //-------------------------------reuse method----------------------------------
   //-----------------------------------------------------------------------------
   //OTP generate and email send
-  private async sendOtp(email: string): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
+  public async sendOtp(email: string): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
     // Find the user by email in the database
     // if user not found then no need to send email
     const existingUser = await this.findUserByEmail(email);
@@ -211,7 +212,7 @@ export class AuthService {
     };
   }
 
-  private async findUserByEmail(email: string): Promise<{
+  public async findUserByEmail(email: string): Promise<{
     id: number,
     email: string,
     password: string,
@@ -234,7 +235,7 @@ export class AuthService {
     });
   }
 
-  private async createUser(userData: any, password: string, loginSource: string, verified: boolean): Promise<{
+  public async createUser(userData: any, password: string, loginSource: string, verified: boolean): Promise<{
     id: number,
     email: string,
     password: string,
@@ -263,7 +264,7 @@ export class AuthService {
     });
   }
 
-  private authenticateUser(user: any, password: string): void {
+  public authenticateUser(user: any, password: string): void {
     // Note: here bcrypt.compareSync(password, user.password) slow down the login process
     if (!user) {
       this.logger.error({
@@ -286,7 +287,7 @@ export class AuthService {
     }
   }
 
-  private buildSigninResponse(user: any, token: any): {
+  public buildSigninResponse(user: any, token: any): {
     success: boolean,
     message: string,
     accessToken: string,
@@ -304,7 +305,7 @@ export class AuthService {
     };
   }
 
-  private async verifyUserAndOtp(user: any, otp: string) {
+  public async verifyUserAndOtp(user: any, otp: string) {
     //if verification fail then it will call callback function other wist not
     this.verifyUserExist(user, () => {
       //Error log already handle in verifyUserExist()
@@ -314,7 +315,7 @@ export class AuthService {
     await this.verifyOtp(user.email, otp);
   }
 
-  private verifyUserExist(user: any, callback: () => void, message: string): void {
+  public verifyUserExist(user: any, callback: () => void, message: string): void {
     if (!user) {
       this.logger.error({
         message: `${message}`,
@@ -324,11 +325,11 @@ export class AuthService {
     }
   }
 
-  private async deleteOtp(email: string) {
+  public async deleteOtp(email: string) {
     return this.prisma.OTP.delete({ where: { email } });
   }
 
-  private buildOtpResponse(user: any, token: any): {
+  public buildOtpResponse(user: any, token: any): {
     success: boolean,
     message: string,
     accessToken: string,
@@ -346,14 +347,14 @@ export class AuthService {
     };
   }
 
-  private async updateForgetPasswordField(email: string, boolValue: boolean): Promise<any> {
+  public async updateForgetPasswordField(email: string, boolValue: boolean): Promise<any> {
     return this.prisma.user.update({
       where: { email },
       data: { isForgetPassword: boolValue },
     });
   }
 
-  private async updateUserVerificationStatus(email: string, verified: boolean): Promise<void> {
+  public async updateUserVerificationStatus(email: string, verified: boolean): Promise<void> {
     await this.prisma.user.update({
       where: {
         email,
@@ -364,7 +365,7 @@ export class AuthService {
     });
   }
 
-  private async verifyUserAndChangePassword(existingUser: any, changePasswordData: ChangePasswordDto, req: any) {
+  public async verifyUserAndChangePassword(existingUser: any, changePasswordData: ChangePasswordDto, req: any) {
     if (!existingUser) {
       this.logger.error({
         message: `${failedToChangePassword} because user not exist`,
@@ -414,7 +415,7 @@ export class AuthService {
     throw new BadRequestException({ message: failedToChangePassword });
   }
 
-  private async updatePassword(user: any, newPassword: string): Promise<{
+  public async updatePassword(user: any, newPassword: string): Promise<{
     password: string;
     isForgetPassword: boolean
   }> {
@@ -425,7 +426,7 @@ export class AuthService {
     });
   }
 
-  private removeSensitiveData(obj: any, sensitiveFields: string[]): any {
+  public removeSensitiveData(obj: any, sensitiveFields: string[]): any {
     const filteredObj = { ...obj };
 
     sensitiveFields.forEach(field => {
@@ -435,7 +436,7 @@ export class AuthService {
     return filteredObj;
   }
 
-  private generateOtp(length: number): string {
+  public generateOtp(length: number): string {
     return otpGenerator.generate(length, {
       digits: true,
       upperCase: false,
@@ -446,7 +447,7 @@ export class AuthService {
     });
   }
 
-  private async storeOtp(email: string, otp: string): Promise<void> {
+  public async storeOtp(email: string, otp: string): Promise<void> {
     const expiryTime = new Date(Date.now() + this.otpExpireTime * 60 * 1000); // 10 minutes expiry
 
     await this.prisma.OTP.upsert({
@@ -456,7 +457,7 @@ export class AuthService {
     });
   }
 
-  private async sendOtpEmail(email: string, otp: string, expireTime: number): Promise<void> {
+  public async sendOtpEmail(email: string, otp: string, expireTime: number): Promise<void> {
     try {
       const mailOptions = {
         to: email,
@@ -476,7 +477,7 @@ export class AuthService {
     }
   }
 
-  private async verifyOtp(email: string, otp: string): Promise<void> {
+  public async verifyOtp(email: string, otp: string): Promise<void> {
     const otpRecord = await this.prisma.OTP.findUnique({
       where: { email },
       select: { otp: true, expiresAt: true },
@@ -491,8 +492,8 @@ export class AuthService {
     }
   }
 
-  // Generate accessToken and refreshToken
-  private generateToken(user: any): { accessToken: string; refreshToken: string } {
+  // Generate both accessToken and refreshToken
+  public generateToken(user: any): { accessToken: string; refreshToken: string } {
     // Remove sensitive fields from the user data
     const userWithoutSensitiveData = this.removeSensitiveData(user, ['password']);
 
@@ -502,7 +503,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private generateJwtAccessToken(jwtService: JwtService, existingUser: any): string {
+  public generateJwtAccessToken(jwtService: JwtService, existingUser: any): string {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, updatedAt, createdAt, ...restUser } = existingUser;
     const payload = { ...restUser };
@@ -512,7 +513,7 @@ export class AuthService {
     });
   }
 
-  private generateJwtRefreshToken(jwtService: JwtService, existingUser: any): string {
+  public generateJwtRefreshToken(jwtService: JwtService, existingUser: any): string {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, updatedAt, createdAt, ...restUser } = existingUser;
     const payload = { ...restUser };
@@ -522,7 +523,7 @@ export class AuthService {
     });
   }
 
-  private randomPasswordGenerator(length: number): string {
+  public randomPasswordGenerator(length: number): string {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
     let code = '';
 

@@ -46,7 +46,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 - **API Documentation:** [Swagger](https://swagger.io/)
 - **Database Environment:** Dockerized PostgreSQL
 
-  
+
 
 ## 📖 Swagger Documents:
 
@@ -360,6 +360,24 @@ After OTP verification you already received an accessToken. Using this accessTok
 ```
 
 here you dont need to use oldPassword field.
+
+
+## 🧪 Running Unit Tests
+
+Follow these steps to run existing tests of this project:
+
+1. **Navigate to the Project Directory:**
+   Open your terminal or command prompt and change the directory to your NestJS Authentication project folder.
+
+2. **Run the Tests:**
+   Execute the following command to run those tests in this project:
+   ```bash
+   npm run test
+   ```
+
+By following these steps, you can easily run existing tests in the NestJS Authentication project and verify the correctness and reliability of this codebase.
+
+
 
 ## 📦 Dockerize Your NestJS Application for Production
 
