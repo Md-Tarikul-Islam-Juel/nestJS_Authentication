@@ -42,6 +42,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 - **OAuth:** [Google](https://developers.google.com/identity/protocols/oauth2) and [Facebook](https://developers.facebook.com/docs/facebook-login/)
 - **API Documentation:** [Swagger](https://swagger.io/)
 - **Database Environment:** Dockerized PostgreSQL
+- **Unit Testing:** [Jest](https://jestjs.io/)
 
 
 
