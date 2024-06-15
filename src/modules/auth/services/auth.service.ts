@@ -1,8 +1,14 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import {
   BadRequestException,
-  ConflictException, ForbiddenException, HttpException, HttpStatus,
-  Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException,
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
@@ -11,9 +17,11 @@ import * as bcrypt from 'bcrypt';
 import * as otpGenerator from 'otp-generator';
 
 
+
 import {
   ChangePasswordDto,
-  ForgetPasswordDto, OAuthDto,
+  ForgetPasswordDto,
+  OAuthDto,
   ResendDto,
   SigninDto,
   SignupDto,
@@ -37,16 +45,31 @@ import {
 } from '../dto/authRespnse.dto';
 import {
   emailSubject,
-  failedToChangePassword, failedToSendOTPEmail, invalidOrExpiredOTP, oldPasswordIsRequired,
-  otpAuthorised, otpEmailSend, otpEmailSendFail, otpVerificationFailed,
+  failedToChangePassword,
+  failedToSendOTPEmail,
+  invalidOrExpiredOTP,
+  oldPasswordIsRequired,
+  otpAuthorised,
+  otpEmailSend,
+  otpEmailSendFail,
+  otpVerificationFailed,
   signinSuccessful,
   signupSuccessful,
   unauthorized,
-  userAlreadyExists, userNotFound,
-  verifyYourUser, yourPasswordHasBeenUpdated,
+  userAlreadyExists,
+  userNotFound,
+  verifyYourUser,
+  yourPasswordHasBeenUpdated,
 } from '../utils/string';
 import { LoggerService } from '../../logger/logger.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CompactEncrypt } from 'jose';
+import {
+  ExistingUserDataInterface,
+  SignInDataInterface,
+  tokenCreateUserDataInterface,
+  TokenInterface,
+} from '../interface/auth.interface';
 
 
 @Injectable()
@@ -56,8 +79,12 @@ export class AuthService {
   private otpSenderMail: string;
   private jwtAccessTokenSecrectKey: string;
   private jwtRefreshTokenSecrectKey: string;
-  private jwtAccessTokenExpireTime: string;
-  private jwtRefreshTokenExpireTime: string;
+  private jweAccessTokenSecrectKey: string;
+  private jweRefreshTokenSecrectKey: string;
+
+  private jwejwtAccessTokenExpireTime: string;
+  private jwejwtRefreshTokenExpireTime: string;
+
 
   constructor(
     private readonly prisma: PrismaService,
@@ -70,10 +97,15 @@ export class AuthService {
     this.saltRounds = Number(this.config.get<string>('BCRYPT_SALT_ROUNDS'));
     this.otpExpireTime = Number(this.config.get<string>('OTP_EXPIRE_TIME'));
     this.otpSenderMail = this.config.get<string>('OTP_SENDER_MAIL');
+
     this.jwtAccessTokenSecrectKey = this.config.get<string>('JWT_ACCESS_TOKEN_SECRET');
     this.jwtRefreshTokenSecrectKey = this.config.get<string>('JWT_REFRESH_TOKEN_SECRET');
-    this.jwtAccessTokenExpireTime = this.config.get<string>('JWT_ACCESS_TOKEN_EXPIRATION');
-    this.jwtRefreshTokenExpireTime = this.config.get<string>('JWT_REFRESH_TOKEN_EXPIRATION');
+    this.jweAccessTokenSecrectKey = this.config.get<string>('JWE_ACCESS_TOKEN_SECRET');
+    this.jweRefreshTokenSecrectKey = this.config.get<string>('JWE_REFRESH_TOKEN_SECRET');
+
+    this.jwejwtAccessTokenExpireTime = this.config.get<string>('JWE_JWT_ACCESS_TOKEN_EXPIRATION');
+    this.jwejwtRefreshTokenExpireTime = this.config.get<string>('JWE_JWT_REFRESH_TOKEN_EXPIRATION');
+
   }
 
 
@@ -112,7 +144,7 @@ export class AuthService {
     const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
     const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
-    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    const token = await this.generateToken(userWithoutSensitiveDataForToken);
 
     return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
   }
@@ -128,7 +160,7 @@ export class AuthService {
     const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
     const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
-    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    const token = await this.generateToken(userWithoutSensitiveDataForToken);
     return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
   }
 
@@ -138,7 +170,7 @@ export class AuthService {
     await this.updateUserVerificationStatus(existingUser.email, true);
     await this.deleteOtp(verificationData.email);
     const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
-    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    const token = await this.generateToken(userWithoutSensitiveDataForToken);
     const userWithoutSensitiveData = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
     return this.buildOtpResponse(userWithoutSensitiveData, token);
   }
@@ -180,7 +212,7 @@ export class AuthService {
     // Remove sensitive fields from the user data
     const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
 
-    const token = this.generateToken(userWithoutSensitiveDataForToken);
+    const token = await this.generateToken(userWithoutSensitiveDataForToken);
     return { success: true, accessToken: token.accessToken };
   }
 
@@ -235,7 +267,7 @@ export class AuthService {
     });
   }
 
-  public async createUser(userData: any, password: string, loginSource: string, verified: boolean): Promise<{
+  public async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: string, verified: boolean): Promise<{
     id: number,
     email: string,
     password: string,
@@ -264,7 +296,7 @@ export class AuthService {
     });
   }
 
-  public authenticateUser(user: any, password: string): void {
+  public authenticateUser(user: ExistingUserDataInterface, password: string): void {
     // Note: here bcrypt.compareSync(password, user.password) slow down the login process
     if (!user) {
       this.logger.error({
@@ -287,25 +319,23 @@ export class AuthService {
     }
   }
 
-  public buildSigninResponse(user: any, token: any): {
+  public buildSigninResponse(user: SignInDataInterface, token: TokenInterface): {
     success: boolean,
     message: string,
     accessToken: string,
     refreshToken: string,
-    data: any
+    data: SignInDataInterface
   } {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, verified, ...restUser } = user;
     return {
       success: true,
       message: signinSuccessful,
       accessToken: token.accessToken,
       refreshToken: token.refreshToken,
-      data: restUser,
+      data: user,
     };
   }
 
-  public async verifyUserAndOtp(user: any, otp: string) {
+  public async verifyUserAndOtp(user: ExistingUserDataInterface, otp: string) {
     //if verification fail then it will call callback function other wist not
     this.verifyUserExist(user, () => {
       //Error log already handle in verifyUserExist()
@@ -315,7 +345,7 @@ export class AuthService {
     await this.verifyOtp(user.email, otp);
   }
 
-  public verifyUserExist(user: any, callback: () => void, message: string): void {
+  public verifyUserExist(user: ExistingUserDataInterface, callback: () => void, message: string): void {
     if (!user) {
       this.logger.error({
         message: `${message}`,
@@ -329,26 +359,24 @@ export class AuthService {
     return this.prisma.OTP.delete({ where: { email } });
   }
 
-  public buildOtpResponse(user: any, token: any): {
+  public buildOtpResponse(existingUser: SignInDataInterface, token: TokenInterface): {
     success: boolean,
     message: string,
     accessToken: string,
     refreshToken: string,
-    data: any
+    data: SignInDataInterface
   } {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...restUser } = user;
     return {
       success: true,
       message: otpAuthorised,
       accessToken: token.accessToken,
       refreshToken: token.refreshToken,
-      data: restUser,
+      data: existingUser,
     };
   }
 
-  public async updateForgetPasswordField(email: string, boolValue: boolean): Promise<any> {
-    return this.prisma.user.update({
+  public async updateForgetPasswordField(email: string, boolValue: boolean): Promise<void> {
+    this.prisma.user.update({
       where: { email },
       data: { isForgetPassword: boolValue },
     });
@@ -365,7 +393,7 @@ export class AuthService {
     });
   }
 
-  public async verifyUserAndChangePassword(existingUser: any, changePasswordData: ChangePasswordDto, req: any) {
+  public async verifyUserAndChangePassword(existingUser: ExistingUserDataInterface, changePasswordData: ChangePasswordDto, req: any) {
     if (!existingUser) {
       this.logger.error({
         message: `${failedToChangePassword} because user not exist`,
@@ -415,18 +443,15 @@ export class AuthService {
     throw new BadRequestException({ message: failedToChangePassword });
   }
 
-  public async updatePassword(user: any, newPassword: string): Promise<{
-    password: string;
-    isForgetPassword: boolean
-  }> {
+  public async updatePassword(user: ExistingUserDataInterface, newPassword: string): Promise<void> {
     const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
-    return this.prisma.user.update({
+    this.prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword, isForgetPassword: false },
     });
   }
 
-  public removeSensitiveData(obj: any, sensitiveFields: string[]): any {
+  public removeSensitiveData(obj: any, sensitiveFields: string[]) {
     const filteredObj = { ...obj };
 
     sensitiveFields.forEach(field => {
@@ -492,35 +517,44 @@ export class AuthService {
     }
   }
 
-  // Generate both accessToken and refreshToken
-  public generateToken(user: any): { accessToken: string; refreshToken: string } {
-    // Remove sensitive fields from the user data
-    const userWithoutSensitiveData = this.removeSensitiveData(user, ['password']);
 
-    const accessToken = this.generateJwtAccessToken(this.jwtAccessToken, userWithoutSensitiveData);
-    const refreshToken = this.generateJwtRefreshToken(this.jwtRefreshToken, userWithoutSensitiveData);
+  public async generateToken(user: tokenCreateUserDataInterface): Promise<TokenInterface> {
+    // Remove sensitive fields from the user data
+    const userWithoutSensitiveData: tokenCreateUserDataInterface = this.removeSensitiveData(user, ['password']);
+
+    const accessToken = await this.generateJwtAccessToken(this.jwtAccessToken, userWithoutSensitiveData);
+    const refreshToken = await this.generateJwtRefreshToken(this.jwtRefreshToken, userWithoutSensitiveData);
 
     return { accessToken, refreshToken };
   }
 
-  public generateJwtAccessToken(jwtService: JwtService, existingUser: any): string {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, updatedAt, createdAt, ...restUser } = existingUser;
-    const payload = { ...restUser };
-    return jwtService.sign(payload, {
-      expiresIn: this.jwtAccessTokenExpireTime,
+
+  public async generateJwtAccessToken(jwtService: JwtService, existingUser: tokenCreateUserDataInterface): Promise<string> {
+    const payload = this.removeSensitiveData(existingUser, ['password', 'updatedAt', 'createdAt']);
+    const jwtToken = jwtService.sign(payload, {
+      expiresIn: this.jwejwtAccessTokenExpireTime,
       secret: this.jwtAccessTokenSecrectKey,
     });
+
+    const jweSecretKey = new TextEncoder().encode(this.jweAccessTokenSecrectKey);
+
+    return await new CompactEncrypt(new TextEncoder().encode(jwtToken))
+      .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+      .encrypt(jweSecretKey);
   }
 
-  public generateJwtRefreshToken(jwtService: JwtService, existingUser: any): string {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, updatedAt, createdAt, ...restUser } = existingUser;
-    const payload = { ...restUser };
-    return jwtService.sign(payload, {
-      expiresIn: this.jwtRefreshTokenExpireTime,
+  public async generateJwtRefreshToken(jwtService: JwtService, existingUser: tokenCreateUserDataInterface): Promise<string> {
+    const payload = this.removeSensitiveData(existingUser, ['password', 'updatedAt', 'createdAt']);
+    const jwtToken = jwtService.sign(payload, {
+      expiresIn: this.jwejwtRefreshTokenExpireTime,
       secret: this.jwtRefreshTokenSecrectKey,
     });
+
+    const jweSecretKey = new TextEncoder().encode(this.jweRefreshTokenSecrectKey);
+
+    return await new CompactEncrypt(new TextEncoder().encode(jwtToken))
+      .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+      .encrypt(jweSecretKey);
   }
 
   public randomPasswordGenerator(length: number): string {

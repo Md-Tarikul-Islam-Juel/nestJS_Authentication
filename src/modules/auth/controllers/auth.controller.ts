@@ -33,6 +33,8 @@ import {
   SIGNUP,
   verification_otp,
 } from '../utils/string';
+import { JweJwtAccessTokenStrategy } from '../../jwe-jwt/jwe-jwt-access-token.strategy';
+import { JweJwtRefreshTokenStrategy } from '../../jwe-jwt/jwe-jwt-refresh-token.strategy';
 
 
 @ApiTags('Auth')
@@ -135,7 +137,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt_accessToken_guard'))
+  @UseGuards(JweJwtAccessTokenStrategy)
   @Post(change_password)
   @ApiOperation({
     summary: 'Change user password',
@@ -167,7 +169,7 @@ export class AuthController {
   }
 
 
-  @UseGuards(AuthGuard('jwt_refreshToken_guard'))
+  @UseGuards(JweJwtRefreshTokenStrategy)
   @HttpCode(HttpStatus.OK)
   @Get(REFRESH_TOKEN)
   @ApiOperation({ summary: 'Refresh access token' })
@@ -198,7 +200,7 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Authentication failed due to invalid or expired credentials.',
   })
-  async googleAuthRedirect(@Req() req): Promise<any> {
+  async googleAuthRedirect(@Req() req){
     return await this.authService.oAuthSignin(req.user);
   }
 
@@ -223,7 +225,7 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Authentication failed due to invalid or expired credentials.',
   })
-  async facebookAuthRedirect(@Req() req): Promise<any> {
+  async facebookAuthRedirect(@Req() req) {
     return await this.authService.oAuthSignin(req.user);
   }
 }

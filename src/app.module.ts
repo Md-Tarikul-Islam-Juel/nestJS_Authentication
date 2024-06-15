@@ -7,7 +7,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { AllExceptionsFilter } from './modules/filters/all-exceptions.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { UserModule } from './modules/user/user.module';
-import { JwtConfigModule } from './modules/jwt/jwt.module';
+import { JwtConfigModule } from './modules/jwe-jwt/jwe-jwt.module';
 
 
 @Module({
@@ -44,3 +44,4 @@ import { JwtConfigModule } from './modules/jwt/jwt.module';
 })
 export class AppModule {
 }
+

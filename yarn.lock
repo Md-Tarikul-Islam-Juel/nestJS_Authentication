@@ -5055,6 +5055,11 @@
     "@sideway/formula" "^3.0.1"
     "@sideway/pinpoint" "^2.0.0"
 
+"jose@^5.4.0":
+  "integrity" "sha512-6rpxTHPAQyWMb9A35BroFl1Sp0ST3DpPcm5EVIxZxdH+e0Hv9fwhyB3XLKFUcHNpdSDnETmBfuPPTTlYz5+USw=="
+  "resolved" "https://registry.npmjs.org/jose/-/jose-5.4.0.tgz"
+  "version" "5.4.0"
+
 "js-beautify@^1.6.14":
   "integrity" "sha512-coM7xq1syLcMyuVGyToxcj2AlzhkDjmfklL8r0JgJ7A76wyGMpJ1oA35mr4APdYNO/o/4YY8H54NQIJzhMbhBg=="
   "resolved" "https://registry.npmjs.org/js-beautify/-/js-beautify-1.14.9.tgz"

@@ -38,7 +38,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 - **Database:** [PostgreSQL](https://www.postgresql.org/)
 - **ORM:** [Prisma](https://www.prisma.io)
 - **DTO Validation:** [class-validator](https://github.com/typestack/class-validator)
-- **Token Management:** [Passport](http://www.passportjs.org/) with [JWT](https://jwt.io/)
+- **Token Management:**  JWT(JWS + JWE). Implemented [JWS](https://tools.ietf.org/html/rfc7515) and [JWE](https://tools.ietf.org/html/rfc7516) using the [jose](https://github.com/panva/jose) and [Passport](http://www.passportjs.org/) library.
 - **OAuth:** [Google](https://developers.google.com/identity/protocols/oauth2) and [Facebook](https://developers.facebook.com/docs/facebook-login/)
 - **API Documentation:** [Swagger](https://swagger.io/)
 - **Database Environment:** Dockerized PostgreSQL
