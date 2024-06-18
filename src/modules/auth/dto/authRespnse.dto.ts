@@ -1,243 +1,123 @@
-import {ApiProperty} from "@nestjs/swagger";
-import {
-    failedToChangePassword, otpAuthorised,
-    otpEmailSend, otpEmailSendFail,
-    otpVerificationFailed,
-    signinSuccessful,
-    signupSuccessful,
-    unauthorized,
-    userAlreadyExists,
-    verifyYourUser, yourPasswordHasBeenUpdated
-} from "../utils/string";
-
+import { ApiProperty } from '@nestjs/swagger';
+import { BaseResponseDto, Tokens, UserData } from './auth.base.dto';
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------
 // =================================================================
-export class SignupResponseDataDto {
-    @ApiProperty({description: "User ID", example: 19})
-    id: number;
-
-    @ApiProperty({description: "Email address of the user", example: "david@gmail.com"})
-    email: string;
-
-    @ApiProperty({description: "First name of the user", example: "david"})
-    firstName: string;
-
-    @ApiProperty({description: "Last name of the user", example: "beckham"})
-    lastName: string;
+export class SignupSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Data of the signed-up user', type: () => UserData })
+  data: { user: UserData };
 }
 
-export class SignupSuccessResponseDto {
-    @ApiProperty({description: "Indicates if the signup was successful", example: true})
-    success: boolean;
-
-    @ApiProperty({description: "Message indicating the result of the signup process", example: `${signupSuccessful}`})
-    message: string;
-
-    @ApiProperty({description: "Data of the signed-up user", type: SignupResponseDataDto})
-    data: SignupResponseDataDto;
+export class SignupUserAlreadyExistResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Message indicating the reason for failure', example: 'User already exists' })
+  message: string = 'User already exists';
 }
-
-export class SignupUserAlreadyExistResponseDto {
-    @ApiProperty({description: "Indicates if the operation was unsuccessful", example: false})
-    success: boolean;
-
-    @ApiProperty({description: "Message indicating the reason for failure", example: userAlreadyExists})
-    message: string;
-}
-
 
 // =================================================================
 //----------------------------SIGN IN-------------------------------
 // =================================================================
-export class SigninUserData {
-    @ApiProperty({description: 'User ID', example: 1})
-    id: number;
+export class SigninSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Tokens object containing access and refresh tokens',
+    type: Tokens,
+  })
+  tokens: Tokens;
 
-    @ApiProperty({description: 'User email', example: 'user@example.com'})
-    email: string;
-
-    @ApiProperty({description: 'User first name', example: 'John'})
-    firstName: string;
-
-    @ApiProperty({description: 'User last name', example: 'Doe'})
-    lastName: string;
+  @ApiProperty({ description: 'Data of the signed-in user', type: () => UserData })
+  data: { user: UserData };
 }
 
-export class SigninSuccessResponseDto {
-    @ApiProperty({description: 'Indicates if the signin was successful', example: true})
-    success: boolean;
-
-    @ApiProperty({description: 'Message indicating the result of the signin process', example: signinSuccessful})
-    message: string;
-
-    @ApiProperty({description: 'Data of the signed-in user', type: SigninUserData})
-    data: SigninUserData;
-
-    @ApiProperty({description: 'JWT token for authentication', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
-    accessToken: string
-
-    @ApiProperty({description: 'JWT refresh token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
-    refreshToken: string;
+export class SigninUnauthorizedResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Message indicating unauthorized access', example: 'Unauthorized' })
+  message: string = 'Unauthorized';
 }
 
-export class SigninUnauthorizedResponseDto {
-    @ApiProperty({description: 'Indicates if the signin was unsuccessful', example: false})
-    success: boolean;
-
-    @ApiProperty({description: 'Message indicating unauthorized access', example: unauthorized})
-    message: string;
-}
-
-export class SigninUserUnverifiedResponseDto {
-    @ApiProperty({description: 'Indicates if the signin was unsuccessful', example: false})
-    success: boolean;
-
-    @ApiProperty({description: 'Message indicating Unverified user', example: verifyYourUser})
-    message: string;
+export class SigninUserUnverifiedResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Message indicating Unverified user', example: 'Please verify your user' })
+  message: string = 'Please verify your user';
 }
 
 // =================================================================
-//-------------------------Verification-----------------------------
+//-------------------------VERIFICATION-----------------------------
 // =================================================================
-export class VerificationUserData {
-    @ApiProperty({description: 'User ID', example: 2})
-    id: number;
-
-    @ApiProperty({description: 'User email', example: 'user@example.com'})
-    email: string;
-
-    @ApiProperty({description: 'User first name', example: 'user'})
-    firstName: string;
-
-    @ApiProperty({description: 'User last name', example: 'user'})
-    lastName: string;
-}
-
-export class VerificationSuccessResponseDto {
-    @ApiProperty({description: 'Indicates if the OTP verification was successful', example: true})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the result of the OTP verification process',
-        example: otpAuthorised
-    })
-    message: string;
-
-    @ApiProperty({description: 'JWT token for authentication', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
-    accessToken: string
-
-    @ApiProperty({description: 'JWT refresh token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'})
-    refreshToken: string;
-
-    @ApiProperty({description: 'Data of the verified user', type: VerificationUserData})
-    data: VerificationUserData;
-}
-
-export class VerificationErrorResponseDto {
-    @ApiProperty({description: 'Indicates if the OTP verification was unsuccessful', example: false})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the reason for OTP verification failure',
-        example: otpVerificationFailed
-    })
-    message: string;
-}
-
-
-// =================================================================
-//-----------------------------Resend-------------------------------
-// =================================================================
-export class ResendSuccessResponseDto {
-    @ApiProperty({description: 'Indicates if the OTP email was sent successfully', example: true})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the result of the OTP email sending process',
-        example: otpEmailSend
-    })
-    message: string;
-}
-
-export class ResendErrorResponseDto {
-    @ApiProperty({description: 'Indicates if the OTP email sending failed', example: false})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the reason for OTP email sending failure',
-        example: otpEmailSendFail
-    })
-    message: string;
+export class VerificationErrorResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Message indicating the reason for OTP verification failure',
+    example: 'OTP verification failed',
+  })
+  message: string = 'OTP verification failed';
 }
 
 // =================================================================
-//------------------------Forget Password---------------------------
+//-----------------------------RESEND-------------------------------
 // =================================================================
-export class ForgetPasswordSuccessResponseDto {
-    @ApiProperty({description: 'Indicates if the OTP email was sent successfully', example: true})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the result of the OTP email sending process',
-        example: otpEmailSend
-    })
-    message: string;
+export class ResendSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Message indicating the result of the OTP email sending process',
+    example: 'OTP email sent',
+  })
+  message: string = 'OTP email sent';
 }
 
-export class ForgetPasswordErrorResponseDto {
-    @ApiProperty({description: 'Indicates if the OTP email sending failed', example: false})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the reason for OTP email sending failure',
-        example: otpEmailSendFail
-    })
-    message: string;
+export class ResendErrorResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Message indicating the reason for OTP email sending failure',
+    example: 'Failed to send OTP email',
+  })
+  message: string = 'Failed to send OTP email';
 }
 
 // =================================================================
-//------------------------Change Password---------------------------
+//------------------------FORGET PASSWORD---------------------------
 // =================================================================
-export class ChangePasswordSuccessResponseDto {
-    @ApiProperty({description: 'Indicates if the password change was successful', example: true})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Message indicating the result of the password change',
-        example: yourPasswordHasBeenUpdated
-    })
-    message: string;
+export class ForgetPasswordSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Message indicating the result of the OTP email sending process',
+    example: 'OTP email sent',
+  })
+  message: string = 'OTP email sent';
 }
 
-export class ChangePasswordErrorResponseDto {
-    @ApiProperty({description: 'Indicates if the password change was unsuccessful', example: false})
-    success: boolean;
-
-    @ApiProperty({
-        description: 'Error message indicating the reason for the password change failure',
-        example: failedToChangePassword
-    })
-    message: string;
+export class ForgetPasswordErrorResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Message indicating the reason for OTP email sending failure',
+    example: 'Failed to send OTP email',
+  })
+  message: string = 'Failed to send OTP email';
 }
 
-export class ChangePasswordUnverifiedResponseDto {
-    @ApiProperty({description: 'Indicates if the signin was unsuccessful', example: false})
-    success: boolean;
-
-    @ApiProperty({description: 'Message indicating Unverified user', example: verifyYourUser})
-    message: string;
+// =================================================================
+//------------------------CHANGE PASSWORD---------------------------
+// =================================================================
+export class ChangePasswordSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Message indicating the result of the password change',
+    example: 'Your password has been updated',
+  })
+  message: string = 'Your password has been updated';
 }
 
+export class ChangePasswordErrorResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Error message indicating the reason for the password change failure',
+    example: 'Failed to change password',
+  })
+  message: string = 'Failed to change password';
+}
+
+export class ChangePasswordUnverifiedResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Message indicating Unverified user', example: 'Please verify your user' })
+  message: string = 'Please verify your user';
+}
 
 // =================================================================
-//-----------------------refresh token------------------------------
+//-----------------------REFRESH TOKEN------------------------------
 // =================================================================
-export class RefreshTokenSuccessResponseDto{
-    @ApiProperty({description: 'Access token generate successful', example: true})
-    success: boolean;
-
-    @ApiProperty({description: 'Access token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZC...'})
-    accessToken: string;
+export class RefreshTokenSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({
+    description: 'Tokens object containing access and refresh tokens',
+    type: Tokens,
+  })
+  tokens: Tokens;
 }

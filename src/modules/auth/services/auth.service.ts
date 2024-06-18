@@ -17,7 +17,6 @@ import * as bcrypt from 'bcrypt';
 import * as otpGenerator from 'otp-generator';
 
 
-
 import {
   ChangePasswordDto,
   ForgetPasswordDto,
@@ -41,7 +40,6 @@ import {
   SignupSuccessResponseDto,
   SignupUserAlreadyExistResponseDto,
   VerificationErrorResponseDto,
-  VerificationSuccessResponseDto,
 } from '../dto/authRespnse.dto';
 import {
   emailSubject,
@@ -54,7 +52,7 @@ import {
   otpEmailSendFail,
   otpVerificationFailed,
   signinSuccessful,
-  signupSuccessful,
+  signupSuccessful, sucessfullyGenerateNewTokens,
   unauthorized,
   userAlreadyExists,
   userNotFound,
@@ -64,18 +62,20 @@ import {
 import { LoggerService } from '../../logger/logger.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CompactEncrypt } from 'jose';
-import {
-  ExistingUserDataInterface,
-  SignInDataInterface,
-  tokenCreateUserDataInterface,
-  TokenInterface,
-} from '../interface/auth.interface';
 
+import {
+  CreatedUserDto,
+  ExistingUserDto,
+  SignInResponseUserDto,
+  SignupResponseUserDto,
+  TokenPayloadDto,
+} from '../dto/auth.internal.dto';
+import { Tokens } from '../dto/auth.base.dto';
 
 @Injectable()
 export class AuthService {
   private saltRounds: number;
-  otpExpireTime: number;
+  public otpExpireTime: number;
   private otpSenderMail: string;
   private jwtAccessTokenSecrectKey: string;
   private jwtRefreshTokenSecrectKey: string;
@@ -110,9 +110,9 @@ export class AuthService {
 
 
   async signup(signupData: SignupDto): Promise<SignupSuccessResponseDto | SignupUserAlreadyExistResponseDto> {
-    const isUserExist = await this.findUserByEmail(signupData.email);
+    const existingUser: ExistingUserDto = await this.findUserByEmail(signupData.email);
 
-    if (isUserExist) {
+    if (existingUser) {
       this.logger.error({
         message: userAlreadyExists,
         details: signupData,
@@ -121,58 +121,58 @@ export class AuthService {
       throw new ConflictException({ message: userAlreadyExists });
     }
 
-    const hashedPassword = await bcrypt.hash(signupData.password, this.saltRounds);
-    const createdUser = await this.createUser(signupData, hashedPassword, 'default', false);//parameter(signupData, hashedPassword, loginSource, verified)
+    const hashedPassword: string = await bcrypt.hash(signupData.password, this.saltRounds);
+    const CreatedUserDto: CreatedUserDto = await this.createUser(signupData, hashedPassword, 'default', false);//parameter(signupData, hashedPassword, loginSource, verified)
 
-    await this.sendOtp(createdUser.email);
+    await this.sendOtp(CreatedUserDto.email);
 
     // Remove sensitive fields from the user data
-    const userWithoutSensitiveData = this.removeSensitiveData(createdUser, ['password', 'verified', 'isForgetPassword']);
+    const sanitizedUserDataForResponse: SignupResponseUserDto = this.removeSensitiveData(CreatedUserDto, ['password', 'verified', 'isForgetPassword']);
     return {
       success: true,
       message: `${signupSuccessful} and please ${verifyYourUser}`,
-      data: userWithoutSensitiveData,
+      data: { user: sanitizedUserDataForResponse },
     };
   }
 
   async signin(signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
-    const existingUser = await this.findUserByEmail(signinData.email);
+    const existingUser: ExistingUserDto = await this.findUserByEmail(signinData.email);
     this.authenticateUser(existingUser, signinData.password);
 
-    await this.updateForgetPasswordField(existingUser.email, false);
+    await this.updateForgotPasswordStatus(existingUser.email, false);
     // Remove sensitive fields from the user data
-    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
-    const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(existingUser, ['password']);
+    const sanitizedUserDataForResponse: SignInResponseUserDto = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
-    const token = await this.generateToken(userWithoutSensitiveDataForToken);
+    const token: Tokens = await this.generateTokens(sanitizedUserDataForToken);
 
-    return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
+    return this.buildSigninResponse(sanitizedUserDataForResponse, token, signinSuccessful);
   }
 
   async oAuthSignin(oAuthSigninData: OAuthDto): Promise<SigninSuccessResponseDto> {
-    let existingUser = await this.findUserByEmail(oAuthSigninData.email);
+    let existingUser: ExistingUserDto = await this.findUserByEmail(oAuthSigninData.email);
     if (!existingUser) {
-      const hashedPassword = await bcrypt.hash(this.randomPasswordGenerator(10), this.saltRounds);
+      const hashedPassword: string = await bcrypt.hash(this.randomPasswordGenerator(10), this.saltRounds);
       existingUser = await this.createUser(oAuthSigninData, hashedPassword, oAuthSigninData.loginSource, true);//parameter(signupData, hashedPassword, loginSource, verified)
     }
 
     // Remove sensitive fields from the user data
-    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
-    const userWithoutSensitiveDataForResponse = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(existingUser, ['password']);
+    const sanitizedUserDataForResponse: SignInResponseUserDto = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
 
-    const token = await this.generateToken(userWithoutSensitiveDataForToken);
-    return this.buildSigninResponse(userWithoutSensitiveDataForResponse, token);
+    const token: Tokens = await this.generateTokens(sanitizedUserDataForToken);
+    return this.buildSigninResponse(sanitizedUserDataForResponse, token, signinSuccessful);
   }
 
-  async verificationOtp(verificationData: VerificationDto): Promise<VerificationSuccessResponseDto | VerificationErrorResponseDto> {
-    const existingUser = await this.findUserByEmail(verificationData.email);
+  async verificationOtp(verificationData: VerificationDto): Promise<SigninSuccessResponseDto | VerificationErrorResponseDto> {
+    const existingUser: ExistingUserDto = await this.findUserByEmail(verificationData.email);
     await this.verifyUserAndOtp(existingUser, verificationData.otp);
     await this.updateUserVerificationStatus(existingUser.email, true);
     await this.deleteOtp(verificationData.email);
-    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
-    const token = await this.generateToken(userWithoutSensitiveDataForToken);
-    const userWithoutSensitiveData = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
-    return this.buildOtpResponse(userWithoutSensitiveData, token);
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(existingUser, ['password']);
+    const token: Tokens = await this.generateTokens(sanitizedUserDataForToken);
+    const sanitizedUserDataForResponse: SignInResponseUserDto = this.removeSensitiveData(existingUser, ['password', 'verified', 'isForgetPassword']);
+    return this.buildSigninResponse(sanitizedUserDataForResponse, token, otpAuthorised);
   }
 
   async resend(ResendOTPData: ResendDto): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
@@ -180,18 +180,19 @@ export class AuthService {
   }
 
   async forgetPassword(forgetData: ForgetPasswordDto): Promise<ForgetPasswordSuccessResponseDto | ForgetPasswordErrorResponseDto> {
-    const existingUser = await this.findUserByEmail(forgetData.email);
-    //if verification fail then it will call callback function other wist nots
+    const existingUser: ExistingUserDto = await this.findUserByEmail(forgetData.email);
+
+    //if verification fail then it will call callback function other wise not
     this.verifyUserExist(existingUser, () => {
       //Error log already handle in verifyUserExist()
       throw new BadRequestException({ message: otpEmailSendFail });
     }, otpEmailSendFail);
-    await this.updateForgetPasswordField(existingUser.email, true);
+    await this.updateForgotPasswordStatus(existingUser.email, true);
     return this.sendOtp(existingUser.email);
   }
 
   async changePassword(changePasswordData: ChangePasswordDto, req: any): Promise<ChangePasswordErrorResponseDto | ChangePasswordSuccessResponseDto> {
-    const existingUser = await this.findUserByEmail(req.user.email);
+    const existingUser: ExistingUserDto = await this.findUserByEmail(req.user.email);
     await this.verifyUserAndChangePassword(existingUser, changePasswordData, req);
     await this.updatePassword(existingUser, changePasswordData.newPassword);
     return {
@@ -201,7 +202,7 @@ export class AuthService {
   }
 
   async refreshToken(req: any): Promise<RefreshTokenSuccessResponseDto> {
-    const existingUser = await this.findUserByEmail(req.user.email);
+    const existingUser: ExistingUserDto = await this.findUserByEmail(req.user.email);
 
     //if verification fail then it will call callback function other wist not
     this.verifyUserExist(existingUser, () => {
@@ -210,10 +211,10 @@ export class AuthService {
     }, userNotFound);
 
     // Remove sensitive fields from the user data
-    const userWithoutSensitiveDataForToken = this.removeSensitiveData(existingUser, ['password']);
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(existingUser, ['password']);
 
-    const token = await this.generateToken(userWithoutSensitiveDataForToken);
-    return { success: true, accessToken: token.accessToken };
+    const tokens: Tokens = await this.generateTokens(sanitizedUserDataForToken);
+    return { success: true, message: sucessfullyGenerateNewTokens, tokens: tokens };
   }
 
   //-----------------------------------------------------------------------------
@@ -223,7 +224,7 @@ export class AuthService {
   public async sendOtp(email: string): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
     // Find the user by email in the database
     // if user not found then no need to send email
-    const existingUser = await this.findUserByEmail(email);
+    const existingUser: ExistingUserDto = await this.findUserByEmail(email);
 
     // If the user is not found, throw a NotFound exception
     if (!existingUser) {
@@ -234,9 +235,9 @@ export class AuthService {
       throw new BadRequestException({ message: otpEmailSendFail });
     }
 
-    const otp = this.generateOtp(6);
-    await this.storeOtp(email, otp);
-    await this.sendOtpEmail(email, otp, this.otpExpireTime);
+    const otp: string = this.generateOtp(6);// Generate a 6-digit OTP
+    await this.storeOtp(email, otp);// Store the generated OTP in the database
+    await this.sendOtpEmail(email, otp, this.otpExpireTime);// Send the OTP to the user's email
 
     return {
       success: true,
@@ -244,15 +245,7 @@ export class AuthService {
     };
   }
 
-  public async findUserByEmail(email: string): Promise<{
-    id: number,
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    verified: boolean,
-    isForgetPassword: boolean,
-  }> {
+  public async findUserByEmail(email: string): Promise<ExistingUserDto> {
     return this.prisma.user.findUnique({
       where: { email },
       select: {
@@ -267,15 +260,7 @@ export class AuthService {
     });
   }
 
-  public async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: string, verified: boolean): Promise<{
-    id: number,
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    verified: boolean,
-    isForgetPassword: boolean,
-  }> {
+  public async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: string, verified: boolean): Promise<ExistingUserDto> {
     return this.prisma.user.create({
       data: {
         ...userData,
@@ -296,7 +281,7 @@ export class AuthService {
     });
   }
 
-  public authenticateUser(user: ExistingUserDataInterface, password: string): void {
+  public authenticateUser(user: ExistingUserDto, password: string): void {
     // Note: here bcrypt.compareSync(password, user.password) slow down the login process
     if (!user) {
       this.logger.error({
@@ -319,23 +304,19 @@ export class AuthService {
     }
   }
 
-  public buildSigninResponse(user: SignInDataInterface, token: TokenInterface): {
-    success: boolean,
-    message: string,
-    accessToken: string,
-    refreshToken: string,
-    data: SignInDataInterface
-  } {
+  public buildSigninResponse(user: SignInResponseUserDto, token: Tokens, message: string): SigninSuccessResponseDto {
     return {
       success: true,
-      message: signinSuccessful,
-      accessToken: token.accessToken,
-      refreshToken: token.refreshToken,
-      data: user,
+      message: message,
+      tokens: {
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+      },
+      data: { user: user },
     };
   }
 
-  public async verifyUserAndOtp(user: ExistingUserDataInterface, otp: string) {
+  public async verifyUserAndOtp(user: ExistingUserDto, otp: string) {
     //if verification fail then it will call callback function other wist not
     this.verifyUserExist(user, () => {
       //Error log already handle in verifyUserExist()
@@ -345,7 +326,7 @@ export class AuthService {
     await this.verifyOtp(user.email, otp);
   }
 
-  public verifyUserExist(user: ExistingUserDataInterface, callback: () => void, message: string): void {
+  public verifyUserExist(user: ExistingUserDto, callback: () => void, message: string): void {
     if (!user) {
       this.logger.error({
         message: `${message}`,
@@ -359,23 +340,7 @@ export class AuthService {
     return this.prisma.OTP.delete({ where: { email } });
   }
 
-  public buildOtpResponse(existingUser: SignInDataInterface, token: TokenInterface): {
-    success: boolean,
-    message: string,
-    accessToken: string,
-    refreshToken: string,
-    data: SignInDataInterface
-  } {
-    return {
-      success: true,
-      message: otpAuthorised,
-      accessToken: token.accessToken,
-      refreshToken: token.refreshToken,
-      data: existingUser,
-    };
-  }
-
-  public async updateForgetPasswordField(email: string, boolValue: boolean): Promise<void> {
+  public async updateForgotPasswordStatus(email: string, boolValue: boolean): Promise<void> {
     this.prisma.user.update({
       where: { email },
       data: { isForgetPassword: boolValue },
@@ -393,7 +358,7 @@ export class AuthService {
     });
   }
 
-  public async verifyUserAndChangePassword(existingUser: ExistingUserDataInterface, changePasswordData: ChangePasswordDto, req: any) {
+  public async verifyUserAndChangePassword(existingUser: ExistingUserDto, changePasswordData: ChangePasswordDto, req: any) {
     if (!existingUser) {
       this.logger.error({
         message: `${failedToChangePassword} because user not exist`,
@@ -419,7 +384,7 @@ export class AuthService {
       }
 
       // Compare the provided password with the hashed password
-      const passwordMatch = await bcrypt.compare(
+      const passwordMatch: boolean = await bcrypt.compare(
         changePasswordData.oldPassword,
         existingUser.password,
       );
@@ -443,8 +408,8 @@ export class AuthService {
     throw new BadRequestException({ message: failedToChangePassword });
   }
 
-  public async updatePassword(user: ExistingUserDataInterface, newPassword: string): Promise<void> {
-    const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
+  public async updatePassword(user: ExistingUserDto, newPassword: string): Promise<void> {
+    const hashedPassword: string = await bcrypt.hash(newPassword, this.saltRounds);
     this.prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword, isForgetPassword: false },
@@ -473,7 +438,7 @@ export class AuthService {
   }
 
   public async storeOtp(email: string, otp: string): Promise<void> {
-    const expiryTime = new Date(Date.now() + this.otpExpireTime * 60 * 1000); // 10 minutes expiry
+    const expiryTime: Date = new Date(Date.now() + this.otpExpireTime * 60 * 1000); // 10 minutes expiry
 
     await this.prisma.OTP.upsert({
       where: { email },
@@ -517,21 +482,19 @@ export class AuthService {
     }
   }
 
-
-  public async generateToken(user: tokenCreateUserDataInterface): Promise<TokenInterface> {
+  public async generateTokens(user: TokenPayloadDto): Promise<Tokens> {
     // Remove sensitive fields from the user data
-    const userWithoutSensitiveData: tokenCreateUserDataInterface = this.removeSensitiveData(user, ['password']);
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(user, ['password']);
 
-    const accessToken = await this.generateJwtAccessToken(this.jwtAccessToken, userWithoutSensitiveData);
-    const refreshToken = await this.generateJwtRefreshToken(this.jwtRefreshToken, userWithoutSensitiveData);
+    const accessToken: string = await this.generateJwtAccessToken(this.jwtAccessToken, sanitizedUserDataForToken);
+    const refreshToken: string = await this.generateJwtRefreshToken(this.jwtRefreshToken, sanitizedUserDataForToken);
 
     return { accessToken, refreshToken };
   }
 
-
-  public async generateJwtAccessToken(jwtService: JwtService, existingUser: tokenCreateUserDataInterface): Promise<string> {
-    const payload = this.removeSensitiveData(existingUser, ['password', 'updatedAt', 'createdAt']);
-    const jwtToken = jwtService.sign(payload, {
+  public async generateJwtAccessToken(jwtService: JwtService, existingUser: TokenPayloadDto): Promise<string> {
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(existingUser, ['password', 'updatedAt', 'createdAt']);
+    const jwtToken: string = jwtService.sign(sanitizedUserDataForToken, {
       expiresIn: this.jwejwtAccessTokenExpireTime,
       secret: this.jwtAccessTokenSecrectKey,
     });
@@ -543,9 +506,9 @@ export class AuthService {
       .encrypt(jweSecretKey);
   }
 
-  public async generateJwtRefreshToken(jwtService: JwtService, existingUser: tokenCreateUserDataInterface): Promise<string> {
-    const payload = this.removeSensitiveData(existingUser, ['password', 'updatedAt', 'createdAt']);
-    const jwtToken = jwtService.sign(payload, {
+  public async generateJwtRefreshToken(jwtService: JwtService, existingUser: TokenPayloadDto): Promise<string> {
+    const sanitizedUserDataForToken: TokenPayloadDto = this.removeSensitiveData(existingUser, ['password', 'updatedAt', 'createdAt']);
+    const jwtToken: string = jwtService.sign(sanitizedUserDataForToken, {
       expiresIn: this.jwejwtRefreshTokenExpireTime,
       secret: this.jwtRefreshTokenSecrectKey,
     });
@@ -559,13 +522,13 @@ export class AuthService {
 
   public randomPasswordGenerator(length: number): string {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
-    let code = '';
+    let code: string = '';
 
-    const randomNumber = Math.floor(Math.random() * 10);
+    const randomNumber: number = Math.floor(Math.random() * 10);
     code += randomNumber.toString();
 
-    for (let i = 1; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
+    for (let i: number = 1; i < length; i++) {
+      const randomIndex: number = Math.floor(Math.random() * charset.length);
       code += charset[randomIndex];
     }
 

@@ -22,7 +22,7 @@ import {
   ResendSuccessResponseDto,
   SigninSuccessResponseDto, SigninUnauthorizedResponseDto, SigninUserUnverifiedResponseDto,
   SignupSuccessResponseDto,
-  SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto, VerificationSuccessResponseDto,
+  SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto,
 } from '../dto/authRespnse.dto';
 import {
   AUTH,
@@ -84,7 +84,7 @@ export class AuthController {
   @Post(verification_otp)
   @ApiOperation({ summary: 'Verify OTP' })
   @ApiBody({ type: VerificationDto })
-  @ApiOkResponse({ description: 'OTP verification success', type: VerificationSuccessResponseDto })
+  @ApiOkResponse({ description: 'OTP verification success', type: SigninSuccessResponseDto })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'OTP verification failed',
@@ -92,7 +92,7 @@ export class AuthController {
   })
   async verificationOtp(
     @Body() EmailVerificationByOTPData: VerificationDto,
-  ): Promise<VerificationSuccessResponseDto | VerificationErrorResponseDto> {
+  ): Promise<SigninSuccessResponseDto | VerificationErrorResponseDto> {
     return await this.authService.verificationOtp(EmailVerificationByOTPData);
   }
 
@@ -177,7 +177,7 @@ export class AuthController {
   async refreshToken(@Req() req: Request): Promise<RefreshTokenSuccessResponseDto> {
     return await this.authService.refreshToken(req);
   }
-
+  
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -200,7 +200,7 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Authentication failed due to invalid or expired credentials.',
   })
-  async googleAuthRedirect(@Req() req){
+  async googleAuthRedirect(@Req() req) {
     return await this.authService.oAuthSignin(req.user);
   }
 

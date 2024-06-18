@@ -1,131 +1,101 @@
-import { IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
-import {ApiProperty} from "@nestjs/swagger";
-import {
-    emailIsRequired,
-    emailMustBeAValidEmailAddress, newPasswordIsRequired,
-    otpMustBeA6DigitNumber,
-    passwordIsRequired
-} from "../utils/string";
+import { IsString, IsOptional, IsIn, Matches, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { EmailDto } from './auth.base.dto';
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------
 // =================================================================
-export class SignupDto {
-    @ApiProperty({example: 'user@example.com', description: 'The email of the user'})
-    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
-    @IsNotEmpty({message: emailIsRequired})
-    email: string;
+export class SignupDto extends EmailDto {
+  @ApiProperty({ example: 'password', description: 'The password for the account' })
+  @IsString()
+  @IsNotEmpty({ message: 'Password is required' })
+  password: string;
 
-    @ApiProperty({example: 'password', description: 'The password for the account'})
-    @IsString()
-    @IsNotEmpty({message: passwordIsRequired})
-    password: string;
+  @ApiProperty({ example: 'John', description: 'The first name of the user', required: false })
+  @IsString()
+  @IsOptional()
+  firstName?: string;
 
-    @ApiProperty({example: 'John', description: 'The first name of the user', required: false})
-    @IsString()
-    @IsOptional()
-    firstName?: string;
-
-    @ApiProperty({example: 'Doe', description: 'The last name of the user', required: false})
-    @IsString()
-    @IsOptional()
-    lastName?: string;
+  @ApiProperty({ example: 'Doe', description: 'The last name of the user', required: false })
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 }
 
 // =================================================================
 //----------------------------SIGN IN-------------------------------
 // =================================================================
-export class SigninDto {
-    @ApiProperty({example: 'user@example.com', description: 'The email of the user'})
-    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
-    @IsNotEmpty({message: emailIsRequired})
-    email: string;
-
-    @ApiProperty({example: 'password', description: 'The password for the account'})
-    @IsString()
-    @IsNotEmpty({message: passwordIsRequired})
-    password: string;
-}
-
-export class OAuthDto {
-    @ApiProperty({ example: 'example@gmail.com', description: 'The email address of the user' })
-    @IsEmail({}, { message: 'Email must be a valid email address' })
-    @IsNotEmpty({ message: 'Email is required' })
-    email: string;
-
-    @ApiProperty({ example: 'John', description: 'The first name of the user', required: false })
-    @IsString()
-    @IsOptional()
-    firstName: string;
-
-    @ApiProperty({ example: 'Doe', description: 'The last name of the user', required: false })
-    @IsString()
-    @IsOptional()
-    lastName: string;
-
-    @ApiProperty({ example: 'google', description: 'The login source of the user (google or facebook)', required: false })
-    @IsString()
-    @IsOptional()
-    @IsIn(['google', 'facebook'], { message: 'Login source must be either google or facebook' })
-    loginSource: string = 'google'; // Default value set to 'google'
+export class SigninDto extends EmailDto {
+  @ApiProperty({ example: 'password', description: 'The password for the account' })
+  @IsString()
+  @IsNotEmpty({ message: 'Password is required' })
+  password: string;
 }
 
 // =================================================================
-//-----------------------------Resend-------------------------------
+//----------------------------OAUTH---------------------------------
 // =================================================================
-export class ResendDto {
-    @ApiProperty({example: 'user@example.com', description: 'The email of the user'})
-    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
-    @IsNotEmpty({message: emailIsRequired})
-    email: string;
+export class OAuthDto extends EmailDto {
+  @ApiProperty({ example: 'John', description: 'The first name of the user', required: false })
+  @IsString()
+  @IsOptional()
+  firstName: string;
+
+  @ApiProperty({ example: 'Doe', description: 'The last name of the user', required: false })
+  @IsString()
+  @IsOptional()
+  lastName: string;
+
+  @ApiProperty({ example: 'google', description: 'The login source of the user (google or facebook)', required: false })
+  @IsString()
+  @IsOptional()
+  @IsIn(['google', 'facebook'], { message: 'Login source must be either google or facebook' })
+  loginSource: string = 'google'; // Default value set to 'google'
 }
 
 // =================================================================
-//-------------------------Verification-----------------------------
+//-----------------------------RESEND-------------------------------
 // =================================================================
-export class VerificationDto {
-    @ApiProperty({example: 'user@example.com', description: 'The email of the user'})
-    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
-    @IsNotEmpty({message: emailIsRequired})
-    email: string;
-
-    @ApiProperty({
-        example: '123456',
-        description: 'A six-digit OTP (One-Time Password)',
-    })
-    @Matches(/^\d{6}$/, {
-        message: otpMustBeA6DigitNumber
-    })
-    otp: string;
+export class ResendDto extends EmailDto {
 }
 
 // =================================================================
-//------------------------Forget Password---------------------------
+//-------------------------VERIFICATION-----------------------------
 // =================================================================
-export class ForgetPasswordDto {
-    @ApiProperty({example: 'user@example.com', description: 'The email of the user'})
-    @IsEmail({}, {message: emailMustBeAValidEmailAddress})
-    @IsNotEmpty({message: emailIsRequired})
-    email: string;
+export class VerificationDto extends EmailDto {
+  @ApiProperty({
+    example: '123456',
+    description: 'A six-digit OTP (One-Time Password)',
+  })
+  @Matches(/^\d{6}$/, {
+    message: 'OTP must be a 6-digit number',
+  })
+  otp: string;
 }
 
 // =================================================================
-//------------------------Change Password---------------------------
+//------------------------FORGET PASSWORD---------------------------
+// =================================================================
+export class ForgetPasswordDto extends EmailDto {
+}
+
+// =================================================================
+//------------------------CHANGE PASSWORD---------------------------
 // =================================================================
 export class ChangePasswordDto {
-    @ApiProperty({
-        example: 'oldPassword123',
-        description: 'The old password (if changing)'
-    })
-    @IsString()
-    @IsOptional()
-    oldPassword?: string;
+  @ApiProperty({
+    example: 'oldPassword123',
+    description: 'The old password (if changing)',
+  })
+  @IsString()
+  @IsOptional()
+  oldPassword?: string;
 
-    @ApiProperty({
-        example: 'newPassword123',
-        description: 'The new password'
-    })
-    @IsString()
-    @IsNotEmpty({message: newPasswordIsRequired})
-    newPassword: string;
+  @ApiProperty({
+    example: 'newPassword123',
+    description: 'The new password',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'New password is required' })
+  newPassword: string;
 }

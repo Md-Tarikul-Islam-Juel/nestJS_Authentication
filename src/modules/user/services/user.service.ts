@@ -34,7 +34,7 @@ export class UserService {
         throw new HttpException(userNotFound, HttpStatus.NOT_FOUND);
       }
 
-      return { success: true, data: user };
+      return { success: true, data: { user: user } };
     } catch (error) {
       this.logger.error({
         message: 'An error occurred while retrieving user data.',

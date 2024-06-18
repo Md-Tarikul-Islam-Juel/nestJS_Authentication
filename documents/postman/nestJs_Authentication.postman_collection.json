@@ -25,7 +25,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"md.tarikulislamjuel@gmail.com\",\r\n    \"password\": \"12345\",\r\n    \"firstName\": \"tarikul\",\r\n    \"lastName\": \"islam\"\r\n}",
+					"raw": "{\r\n    \"email\": \"md.tarikulislamjuel06@gmail.com\",\r\n    \"password\": \"12345\",\r\n    \"firstName\": \"tarikul\",\r\n    \"lastName\": \"juel\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -53,10 +53,10 @@
 					"script": {
 						"exec": [
 							"var jsonData = pm.response.json();\r",
-							"pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);\r",
-							"pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);\r",
+							"pm.collectionVariables.set(\"accessToken\", jsonData.tokens.accessToken);\r",
+							"pm.collectionVariables.set(\"refreshToken\", jsonData.tokens.refreshToken);\r",
 							"\r",
-							"pm.globals.set(\"accessToken\", jsonData.accessToken);\r",
+							"pm.globals.set(\"accessToken\", jsonData.tokens.accessToken);\r",
 							""
 						],
 						"type": "text/javascript",
@@ -112,12 +112,12 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"\r",
 							"var jsonData = pm.response.json();\r",
-							"pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);\r",
-							"pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);\r",
+							"pm.collectionVariables.set(\"accessToken\", jsonData.tokens.accessToken);\r",
+							"pm.collectionVariables.set(\"refreshToken\", jsonData.tokens.refreshToken);\r",
 							"\r",
-							"pm.globals.set(\"accessToken\", jsonData.accessToken);"
+							"pm.globals.set(\"accessToken\", jsonData.tokens.accessToken);\r",
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -139,7 +139,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"md.tarikulislamjuel@gmail.com\",\r\n    \"otp\": \"820592\"\r\n}",
+					"raw": "{\r\n    \"email\": \"md.tarikulislamjuel@gmail.com\",\r\n    \"otp\": \"651665\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -266,9 +266,12 @@
 					"script": {
 						"exec": [
 							"var jsonData = pm.response.json();\r",
-							"pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);\r",
 							"\r",
-							"pm.globals.set(\"accessToken\", jsonData.accessToken);\r",
+							"pm.collectionVariables.set(\"accessToken\", jsonData.tokens.accessToken);\r",
+							"pm.collectionVariables.set(\"refreshToken\", jsonData.tokens.refreshToken);\r",
+							"\r",
+							"\r",
+							"pm.globals.set(\"accessToken\", jsonData.tokens.accessToken);\r",
 							""
 						],
 						"type": "text/javascript",

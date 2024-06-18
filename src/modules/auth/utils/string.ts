@@ -35,3 +35,4 @@ export const invalidRefreshToken = 'Invalid Refresh Token';
 export const userNotFound = 'User Not Found';
 export const failedToSendOTPEmail = 'Failed to send OTP email';
 export const invalidOrExpiredOTP = 'Invalid or expired OTP';
+export const sucessfullyGenerateNewTokens = 'successfully generate new tokens';
