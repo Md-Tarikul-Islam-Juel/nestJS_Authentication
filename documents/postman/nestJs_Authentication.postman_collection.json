@@ -259,7 +259,7 @@
 			"response": []
 		},
 		{
-			"name": "get access token by refresh token",
+			"name": "refresh token",
 			"event": [
 				{
 					"listen": "test",
@@ -307,42 +307,6 @@
 					"path": [
 						"auth",
 						"refresh-token"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "me",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{accessToken}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{url}}/user/me",
-					"host": [
-						"{{url}}"
-					],
-					"path": [
-						"user",
-						"me"
 					]
 				}
 			},

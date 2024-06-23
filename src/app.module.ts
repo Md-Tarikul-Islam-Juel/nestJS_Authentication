@@ -33,7 +33,6 @@ import { JwtConfigModule } from './modules/jwe-jwt/jwe-jwt.module';
     LoggerModule,
     UserModule,
     JwtConfigModule,
-
   ],
   providers: [
     {
@@ -44,4 +43,3 @@ import { JwtConfigModule } from './modules/jwe-jwt/jwe-jwt.module';
 })
 export class AppModule {
 }
-

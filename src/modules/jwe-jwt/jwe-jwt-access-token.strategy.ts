@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as jose from 'jose';
+import { GqlExecutionContext } from '@nestjs/graphql';
 
 @Injectable()
 export class JweJwtAccessTokenStrategy extends AuthGuard('jwt_accessToken_guard') {
@@ -14,7 +15,7 @@ export class JweJwtAccessTokenStrategy extends AuthGuard('jwt_accessToken_guard'
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = this.getRequest(context);
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -32,6 +33,16 @@ export class JweJwtAccessTokenStrategy extends AuthGuard('jwt_accessToken_guard'
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  public getRequest(context: ExecutionContext): any {
+    const contextType = context.getType<'http' | 'graphql'>();
+    if (contextType === 'http') {
+      return context.switchToHttp().getRequest();
+    } else if (contextType === 'graphql') {
+      const ctx = GqlExecutionContext.create(context);
+      return ctx.getContext().req;
     }
   }
 

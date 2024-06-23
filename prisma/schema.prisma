@@ -28,8 +28,8 @@ model User {
 }
 
 model OTP {
-  email    String   @id
-  otp      String
+  email     String   @id
+  otp       String
   expiresAt DateTime
 
   createdAt DateTime @default(now())

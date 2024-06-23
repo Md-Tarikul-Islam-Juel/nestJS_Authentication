@@ -177,7 +177,7 @@ export class AuthController {
   async refreshToken(@Req() req: Request): Promise<RefreshTokenSuccessResponseDto> {
     return await this.authService.refreshToken(req);
   }
-  
+
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
