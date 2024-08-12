@@ -112,7 +112,7 @@ export class AuthService {
   async signup(signupData: SignupDto): Promise<SignupSuccessResponseDto | SignupUserAlreadyExistResponseDto> {
     const existingUser: ExistingUserDto = await this.findUserByEmail(signupData.email);
 
-    if (existingUser) {
+    if (existingUser && existingUser.verified === true) {
       this.logger.error({
         message: userAlreadyExists,
         details: signupData,
@@ -261,8 +261,16 @@ export class AuthService {
   }
 
   public async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: string, verified: boolean): Promise<ExistingUserDto> {
-    return this.prisma.user.create({
-      data: {
+    return this.prisma.user.upsert({
+      where: { email: userData.email },
+      update: {
+        ...userData,
+        loginSource: loginSource,
+        verified: verified,
+        isForgetPassword: false,
+        password: password,
+      },
+      create: {
         ...userData,
         loginSource: loginSource,
         verified: verified,

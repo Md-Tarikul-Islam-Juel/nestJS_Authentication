@@ -1581,45 +1581,55 @@ describe('AuthService', () => {
       expect(() => authService.authenticateUser(user, password)).not.toThrow();
     });
   });
-
+  
   describe('createUser', () => {
-    it('should create a user with the given data', async () => {
+
+    it('should create or update a user with the given data', async () => {
       // Mock user data to be provided as input
       const userData = {
         email: 'test@example.com',
         firstName: 'John',
         lastName: 'Doe',
-      };
+      } as SignupDto | OAuthDto;
 
       // Mock password and other details
       const password = 'hashedPassword';
       const loginSource = 'local';
-      const verified = true;
+      const verified = false;
 
-      // Mock the PrismaService create method to return the expected user data
+      // Mock the expected user data returned by Prisma
       const expectedUser = {
         id: 1,
         email: 'test@example.com',
         firstName: 'John',
         lastName: 'Doe',
-        verified: true,
+        verified: false,
         password: 'hashedPassword',
         isForgetPassword: false,
       };
 
-      prismaService.user.create = jest.fn().mockResolvedValue(expectedUser);
+      // Mock the Prisma upsert method to return the expected user data
+      prismaService.user.upsert = jest.fn().mockResolvedValue(expectedUser);
 
       // Call the createUser method with the mock data
-      const result = await authService.createUser(userData as SignupDto, password, loginSource, verified);
+      const result = await authService.createUser(userData, password, loginSource, verified);
 
-      // Expect the PrismaService create method to be called with the correct parameters
-      expect(prismaService.user.create).toHaveBeenCalledWith({
-        data: {
+      // Expect the Prisma upsert method to be called with the correct parameters
+      expect(prismaService.user.upsert).toHaveBeenCalledWith({
+        where: { email: userData.email },
+        update: {
           ...userData,
-          loginSource: loginSource,
-          verified: verified,
+          loginSource,
+          verified,
           isForgetPassword: false,
-          password: password,
+          password,
+        },
+        create: {
+          ...userData,
+          loginSource,
+          verified,
+          isForgetPassword: false,
+          password,
         },
         select: {
           id: true,
@@ -1636,6 +1646,7 @@ describe('AuthService', () => {
       expect(result).toEqual(expectedUser);
     });
   });
+
 
   describe('findUserByEmail', () => {
     it('should find a user by email', async () => {
