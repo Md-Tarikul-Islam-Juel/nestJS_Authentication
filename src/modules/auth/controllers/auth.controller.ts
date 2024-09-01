@@ -10,7 +10,7 @@ import {
   SigninDto,
   SignupDto,
   VerificationDto,
-} from '../dto/authRequest.dto';
+} from '../dtos/authRequest.dto';
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import {
@@ -23,7 +23,7 @@ import {
   SigninSuccessResponseDto, SigninUnauthorizedResponseDto, SigninUserUnverifiedResponseDto,
   SignupSuccessResponseDto,
   SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto,
-} from '../dto/authRespnse.dto';
+} from '../dtos/authRespnse.dto';
 import {
   AUTH,
   change_password,
@@ -33,8 +33,8 @@ import {
   SIGNUP,
   verification_otp,
 } from '../utils/string';
-import { JweJwtAccessTokenStrategy } from '../../jwe-jwt/jwe-jwt-access-token.strategy';
-import { JweJwtRefreshTokenStrategy } from '../../jwe-jwt/jwe-jwt-refresh-token.strategy';
+import { JweJwtAccessTokenStrategy } from '../../token/jwe-jwt-access-token.strategy';
+import { JweJwtRefreshTokenStrategy } from '../../token/jwe-jwt-refresh-token.strategy';
 
 
 @ApiTags('Auth')
@@ -113,7 +113,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post(forget_password_otp_send)
   @ApiOperation({
-    summary: 'Forget password OTP email send',
+    summary: 'Forget password.service.ts OTP email send',
     description: `
       Password recovery steps:
       
@@ -140,7 +140,7 @@ export class AuthController {
   @UseGuards(JweJwtAccessTokenStrategy)
   @Post(change_password)
   @ApiOperation({
-    summary: 'Change user password',
+    summary: 'Change user password.service.ts',
     description: `
       1) For forget password only newPassword is required 
       2) For change password oldPassword & newPassword both fields are required
@@ -153,7 +153,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Failed to change password',
+    description: 'Failed to change password.service.ts',
     type: ChangePasswordErrorResponseDto,
   })
   @ApiResponse({

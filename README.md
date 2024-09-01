@@ -363,7 +363,7 @@ route is protected by the **JWT Access token**.
 ```json
 {
   "success": true,
-  "message": "Your password has been updated"
+  "message": "Your password.service.ts has been updated"
 }
 ```
 
@@ -419,25 +419,6 @@ After OTP verification you already received an accessToken. Using this accessTok
 
 here you dont need to use oldPassword field.
 
-## 🧪 Running Unit Tests
-
-Follow these steps to run existing tests of this project:
-
-1. **Navigate to the Project Directory:**
-   Open your terminal or command prompt and change the directory to your NestJS Authentication project folder.
-
-2. **Run the Tests:**
-   Execute the following command to run those tests in this project:
-   ```bash
-   npm run test
-   ```
-
-<p align="center">
-  <img src="https://github.com/Md-Tarikul-Islam-Juel/nestJS_Authentication/blob/main/documents/photos/testcode.png"  alt="Nest Logo" />
-</p>
-
-By following these steps, you can easily run existing tests in the NestJS Authentication project and verify the
-correctness and reliability of this codebase.
 
 ## 📦 Dockerize Your NestJS Application for Production
 

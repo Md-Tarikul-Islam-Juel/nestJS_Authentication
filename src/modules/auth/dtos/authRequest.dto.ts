@@ -1,14 +1,24 @@
-import { IsString, IsOptional, IsIn, Matches, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsIn,
+  Matches,
+  IsNotEmpty,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EmailDto } from './auth.base.dto';
+import * as dotenv from 'dotenv';
+import { PasswordValidation } from '../Decorators/password-decorator.decorator';
+
+
+dotenv.config();
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------
 // =================================================================
 export class SignupDto extends EmailDto {
   @ApiProperty({ example: 'password', description: 'The password for the account' })
-  @IsString()
-  @IsNotEmpty({ message: 'Password is required' })
+  @PasswordValidation()
   password: string;
 
   @ApiProperty({ example: 'John', description: 'The first name of the user', required: false })
@@ -26,7 +36,7 @@ export class SignupDto extends EmailDto {
 //----------------------------SIGN IN-------------------------------
 // =================================================================
 export class SigninDto extends EmailDto {
-  @ApiProperty({ example: 'password', description: 'The password for the account' })
+  @ApiProperty({ example: 'password', description: 'The password.service.ts for the account' })
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
   password: string;
@@ -85,7 +95,7 @@ export class ForgetPasswordDto extends EmailDto {
 export class ChangePasswordDto {
   @ApiProperty({
     example: 'oldPassword123',
-    description: 'The old password (if changing)',
+    description: 'The old password.service.ts (if changing)',
   })
   @IsString()
   @IsOptional()
@@ -93,9 +103,9 @@ export class ChangePasswordDto {
 
   @ApiProperty({
     example: 'newPassword123',
-    description: 'The new password',
+    description: 'The new password.service.ts',
   })
   @IsString()
-  @IsNotEmpty({ message: 'New password is required' })
+  @IsNotEmpty({ message: 'New password.service.ts is required' })
   newPassword: string;
 }

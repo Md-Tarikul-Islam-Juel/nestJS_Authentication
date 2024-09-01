@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseResponseDto, Tokens, UserData } from './auth.base.dto';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------
@@ -12,6 +13,23 @@ export class SignupSuccessResponseDto extends BaseResponseDto {
 export class SignupUserAlreadyExistResponseDto extends BaseResponseDto {
   @ApiProperty({ description: 'Message indicating the reason for failure', example: 'User already exists' })
   message: string = 'User already exists';
+}
+
+export class SignupResponseUserDto {
+  @IsNotEmpty()
+  id: number;
+
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
 }
 
 // =================================================================
@@ -36,6 +54,23 @@ export class SigninUnauthorizedResponseDto extends BaseResponseDto {
 export class SigninUserUnverifiedResponseDto extends BaseResponseDto {
   @ApiProperty({ description: 'Message indicating Unverified user', example: 'Please verify your user' })
   message: string = 'Please verify your user';
+}
+
+export class SignInResponseUserDto {
+  @IsNotEmpty()
+  id: number;
+
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
 }
 
 // =================================================================
@@ -92,18 +127,18 @@ export class ForgetPasswordErrorResponseDto extends BaseResponseDto {
 // =================================================================
 export class ChangePasswordSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
-    description: 'Message indicating the result of the password change',
-    example: 'Your password has been updated',
+    description: 'Message indicating the result of the password.service.ts change',
+    example: 'Your password.service.ts has been updated',
   })
-  message: string = 'Your password has been updated';
+  message: string = 'Your password.service.ts has been updated';
 }
 
 export class ChangePasswordErrorResponseDto extends BaseResponseDto {
   @ApiProperty({
-    description: 'Error message indicating the reason for the password change failure',
-    example: 'Failed to change password',
+    description: 'Error message indicating the reason for the password.service.ts change failure',
+    example: 'Failed to change password.service.ts',
   })
-  message: string = 'Failed to change password';
+  message: string = 'Failed to change password.service.ts';
 }
 
 export class ChangePasswordUnverifiedResponseDto extends BaseResponseDto {

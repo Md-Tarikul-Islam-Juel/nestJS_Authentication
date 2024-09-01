@@ -3,7 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { User } from '../dto/user.type';
 import { UserService } from '../services/user.service';
 import { UpdateUserInput } from '../dto/user.input';
-import { JweJwtAccessTokenStrategy } from '../../jwe-jwt/jwe-jwt-access-token.strategy';
+import { JweJwtAccessTokenStrategy } from '../../token/jwe-jwt-access-token.strategy';
 
 @Resolver(() => User)
 @UseGuards(JweJwtAccessTokenStrategy)

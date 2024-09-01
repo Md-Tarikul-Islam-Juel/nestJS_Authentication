@@ -10,9 +10,9 @@ export class EmailDto {
   email: string;
 }
 
-// Base class for password validation
+// Base class for password.service.ts validation
 export class PasswordDto {
-  @ApiProperty({ example: 'password', description: 'The password for the account' })
+  @ApiProperty({ example: 'password', description: 'The password.service.ts for the account' })
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
   password: string;

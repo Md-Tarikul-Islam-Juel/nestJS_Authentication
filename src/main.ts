@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { rateLimit } from 'express-rate-limit';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './modules/filters/all-exceptions.filter';
+import { AllExceptionsFilter } from './modules/filter/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
