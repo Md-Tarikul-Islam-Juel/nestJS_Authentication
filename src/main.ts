@@ -4,6 +4,8 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './modules/filter/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { LoggerService } from './modules/logger/logger.service';
+
 
 const limiter = rateLimit({
   //from per ip we allow max 5/min
@@ -22,7 +24,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.useGlobalFilters(new AllExceptionsFilter());
+  const logger = app.get(LoggerService);
+
+  app.useGlobalFilters(new AllExceptionsFilter(logger));
   app.use('/auth', limiter); // Apply rate limiting to authentication(/auth) route
 
   //validate all incoming packets based on all DTOs

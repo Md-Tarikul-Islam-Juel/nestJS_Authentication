@@ -156,7 +156,9 @@ To configure the environment variables for this project, create a `.env` file in
 add the following variables according to your data:
 
 ```
+# ======================================================
 # Database Configuration
+# ======================================================
 DATABASE_HOST=localhost
 DATABASE_USER=juel
 DATABASE_PASSWORD=123
@@ -164,37 +166,72 @@ DATABASE_PORT=5432
 DATABASE_NAME=nest
 DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?schema=public
 
-# DOCKER
+# ======================================================
+# Docker Configuration
+# ======================================================
 CONTAINER_NAME=nest-Auth-DB
 
-# JWT Secret Keys
-JWT_ACCESS_TOKEN_SECRET=bababababababababababababababab
-JWT_REFRESH_TOKEN_SECRET=abababababababababababababababa
-
-# OTP Security Configuration
+# ======================================================
+# OTP(One-Time Password) Email Security Configuration
+# ======================================================
 OTP_SENDER_MAIL_HOST=smtp.office365.com
-OTP_SENDER_MAIL="verification@gmail.com"
+OTP_SENDER_MAIL_PORT=587
+OTP_SENDER_MAIL="verification@xyz.com"
 OTP_SENDER_MAIL_PASSWORD="12345"
 
+# ======================================================
 # Google OAuth Configuration
-GOOGLE_CLIENT_ID=170710067200-7l65778saggjugtfufv3pgp6d4u00j466.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=GaCaa-flK5CKsqQ1DEd1o3144PZtur5-O0
+# ======================================================
+GOOGLE_CLIENT_ID=1234567890123-8l6478svqjujtfuhv3p1234567890123.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-flK5CKyqQ1DEb112345678901-O0
 GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
+# ======================================================
 # Facebook OAuth Configuration
-FACEBOOK_CLIENT_ID=474444614456484
-FACEBOOK_CLIENT_SECRET=f5df32576af581129567b62dfd854c8d
+# ======================================================
+FACEBOOK_CLIENT_ID=123456789012345
+FACEBOOK_CLIENT_SECRET=f5df32076a1234567890159dfd854c7d
 FACEBOOK_CALLBACK_URL=http://localhost:3000/auth/facebook/callback
 
+# ======================================================
 # Bcrypt Configuration
+# ======================================================
 BCRYPT_SALT_ROUNDS=14
 
-# OTP Expiry Time (in minutes)
+# ======================================================
+# OTP (One-Time Password) Configuration
+# ======================================================
 OTP_EXPIRE_TIME=5
 
-# JWT Token Expiration Time
-JWT_ACCESS_TOKEN_EXPIRATION=300s
-JWT_REFRESH_TOKEN_EXPIRATION=30d
+# ======================================================
+# JWT and JWE Secret Keys
+# JSON Web Encryption (JWE). Each key should be exactly 32 characters long,
+# ensuring they are 256 bits when properly encoded.
+# ======================================================
+JWE_ACCESS_TOKEN_SECRET=1234567890abcdef1234567890abcdef
+JWT_ACCESS_TOKEN_SECRET=abcdefghijklmnopqrstuvwxyza123456
+JWE_REFRESH_TOKEN_SECRET=abcdef1234567890abcdef1234567890
+JWT_REFRESH_TOKEN_SECRET=abcdefghijklmnopqrstuvwxz1234567
+
+# ======================================================
+# Token Expiration Configuration
+# ======================================================
+JWE_JWT_ACCESS_TOKEN_EXPIRATION=86400s
+JWE_JWT_REFRESH_TOKEN_EXPIRATION=30d
+
+# ======================================================
+# Password Validation Configuration
+# ======================================================
+PASSWORD_MIN_LENGTH=8
+PASSWORD_MAX_LENGTH=20
+PASSWORD_REQUIRE_UPPERCASE=true
+PASSWORD_REQUIRE_LOWERCASE=true
+PASSWORD_REQUIRE_NUMBERS=true
+PASSWORD_REQUIRE_SPECIAL_CHARACTERS=true
+PASSWORD_DISALLOW_REPEATING=false
+PASSWORD_DISALLOW_SEQUENTIAL=false
+PASSWORD_BLACKLIST_COMMON=false
+PASSWORD_EXCLUDE_USERNAME=true
 ```
 
 <br/><br/><br/>
@@ -419,6 +456,40 @@ After OTP verification you already received an accessToken. Using this accessTok
 
 here you dont need to use oldPassword field.
 
+
+## 🔐 Password Validation Configuration
+
+Easily customize password validation rules for your application using the environment variables in the `.env` file. This allows you to enforce specific security requirements based on your project's needs.
+
+### Configuration Options:
+
+- **`PASSWORD_MIN_LENGTH`**: Sets the minimum password length (e.g., `8`).
+- **`PASSWORD_MAX_LENGTH`**: Sets the maximum password length (e.g., `20`).
+- **`PASSWORD_REQUIRE_UPPERCASE`**: Requires at least one uppercase letter (`true` or `false`).
+- **`PASSWORD_REQUIRE_LOWERCASE`**: Requires at least one lowercase letter (`true` or `false`).
+- **`PASSWORD_REQUIRE_NUMBERS`**: Requires at least one numeric digit (`true` or `false`).
+- **`PASSWORD_REQUIRE_SPECIAL_CHARACTERS`**: Requires at least one special character (e.g., `!@#$%`) (`true` or `false`).
+- **`PASSWORD_DISALLOW_REPEATING`**: Prevents the use of consecutive repeating characters (`true` or `false`).
+- **`PASSWORD_DISALLOW_SEQUENTIAL`**: Prevents the use of sequential characters (e.g., `123`, `abc`) (`true` or `false`).
+- **`PASSWORD_BLACKLIST_COMMON`**: Blocks common passwords like `password`, `123456` (`true` or `false`).
+- **`PASSWORD_EXCLUDE_USERNAME`**: Ensures the password does not contain the username (`true` or `false`).
+
+### Example Configuration:
+
+Modify the following variables in your `.env` file to define your desired password policy:
+
+```bash
+PASSWORD_MIN_LENGTH=10
+PASSWORD_MAX_LENGTH=20
+PASSWORD_REQUIRE_UPPERCASE=true
+PASSWORD_REQUIRE_LOWERCASE=true
+PASSWORD_REQUIRE_NUMBERS=true
+PASSWORD_REQUIRE_SPECIAL_CHARACTERS=true
+PASSWORD_DISALLOW_REPEATING=false
+PASSWORD_DISALLOW_SEQUENTIAL=false
+PASSWORD_BLACKLIST_COMMON=true
+PASSWORD_EXCLUDE_USERNAME=true
+```
 
 ## 📦 Dockerize Your NestJS Application for Production
 
