@@ -1,0 +1,43 @@
+============================================================================
+-----------------------------------nestjs-----------------------------------
+============================================================================
+1) yarn start
+
+
+============================================================================
+-----------------------------------prisma-----------------------------------
+============================================================================
+1) npx prisma generate
+    When to Run:
+        - After you make any changes to your Prisma schema file (schema.prisma).
+        - Whenever you want to regenerate the Prisma Client to reflect the latest changes (like new models or updated fields).
+        - in shor after changing your schema.
+
+2) npx prisma migrate deploy
+    When to Run:
+        - Run when deploying your app to production/ or pull from github pre ready project to apply all
+           database changes (like new tables or columns) to the live database
+        - Apply those changes to the production database so everything works smoothly in the live environment.
+
+3) prisma migrate dev
+    When to Run:
+        - Creates a new migration file based on changes you made in your Prisma schema and applies it to your
+           local development database.
+        - During development, whenever you make changes to your schema (like adding a new table or modifying a field).
+
+
+============================================================================
+-----------------------------------Docker-----------------------------------
+============================================================================
+1) To run the Docker Compose configuration specified in the docker-compose-dev.yml
+Command: docker-compose -f docker-compose-dev.yml up -d   (for Windows)
+               -f Flag: Specifies which Docker Compose file to use. In this case, it points to docker-compose-dev.yml.
+                    up: Tells Docker Compose to create and start the containers.
+                    -d: Runs the containers in detached mode (in the background).
+
+2) To rebuild and run the services (if you've made changes to the images or configurations):
+Command: docker-compose -f docker-compose-dev.yml up --build -d
+
+
+3) To stop the services:
+Command: docker-compose -f docker-compose-dev.yml down

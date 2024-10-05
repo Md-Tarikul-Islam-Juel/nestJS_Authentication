@@ -20,6 +20,7 @@ import { IsNotBlockedPassword } from './validators/password-validator.validator'
 import { ConfigModule } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import authConfig from './config/auth.config';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import authConfig from './config/auth.config';
     PrismaModule,
     LoggerModule,
     JwtConfigModule,
+    RedisModule
   ],
   controllers: [AuthController],
   providers: [

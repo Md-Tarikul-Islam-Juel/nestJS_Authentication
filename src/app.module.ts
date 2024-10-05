@@ -8,6 +8,7 @@ import { AllExceptionsFilter } from './modules/filter/all-exceptions.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { UserModule } from './modules/user/user.module';
 import { JwtConfigModule } from './modules/token/jwe-jwt.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 
 @Module({
@@ -21,6 +22,7 @@ import { JwtConfigModule } from './modules/token/jwe-jwt.module';
     LoggerModule,
     UserModule,
     JwtConfigModule,
+    RedisModule,
   ],
   providers: [
     {

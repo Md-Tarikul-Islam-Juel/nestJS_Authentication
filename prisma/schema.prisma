@@ -26,13 +26,3 @@ model User {
 
   @@map("users")
 }
-
-model OTP {
-  email     String   @id
-  otp       String
-  expiresAt DateTime
-
-  createdAt DateTime @default(now())
-
-  @@map("otp")
-}

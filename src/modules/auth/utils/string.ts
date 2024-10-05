@@ -6,8 +6,8 @@ export const SIGNUP = 'signup';
 export const SIGNIN = 'signin';
 export const resend_otp = 'resend';
 export const verification_otp = 'verify';
-export const forget_password_otp_send = 'forget-password.service.ts';
-export const change_password = 'change-password.service.ts';
+export const forget_password_otp_send = 'forget-password';
+export const change_password = 'change-password';
 export const REFRESH_TOKEN = 'refresh-token';
 
 //---------------------------------------------------------------
@@ -23,9 +23,9 @@ export const unauthorized = "Unauthorized";
 export const otpVerificationFailed = "OTP verification failed";
 export const otpAuthorised = 'OTP authorised';
 export const otpEmailSendFail = "OTP email send fail";
-export const failedToChangePassword = "Failed to change password.service.ts";
-export const yourPasswordHasBeenUpdated = 'Your password.service.ts has been updated';
-export const oldPasswordIsRequired = "Old password.service.ts is required";
+export const failedToChangePassword = "Failed to change password";
+export const yourPasswordHasBeenUpdated = 'Your password has been updated';
+export const oldPasswordIsRequired = "Old password is required";
 export const emailMustBeAValidEmailAddress = 'Email must be a valid email address';
 export const emailIsRequired = 'Email is required';
 export const passwordIsRequired = 'Password is required';
