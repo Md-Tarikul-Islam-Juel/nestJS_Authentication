@@ -53,6 +53,7 @@ import {EmailService} from './email.service';
 import {CommonAuthService} from './commonAuth.service';
 import {PasswordService} from './password.service';
 import {ExistingUserInterface, CreatedUserInterface, TokenPayloadInterface, TokenConfig} from '../interfaces/auth.interface';
+import {LastActivityTrackService} from './lastActivityTrack.service';
 
 @Injectable()
 export class AuthService {
@@ -69,18 +70,19 @@ export class AuthService {
     private tokenService: TokenService,
     private emailService: EmailService,
     private readonly passwordService: PasswordService,
-    private readonly commonAuthService: CommonAuthService
+    private readonly commonAuthService: CommonAuthService,
+    private lastActivityService: LastActivityTrackService
   ) {
     this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds');
-    this.otpExpireTime = this.configService.get<number>('authConfig.otpExpireTime');
+    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
 
     this.tokenConfig = {
-      jweAccessTokenSecretKey: this.configService.get<string>('authConfig.jweAccessTokenSecretKey'),
-      jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.jwtAccessTokenSecretKey'),
-      jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.jweJwtAccessTokenExpireTime'),
-      jweRefreshTokenSecretKey: this.configService.get<string>('authConfig.jweRefreshTokenSecretKey'),
-      jwtRefreshTokenSecretKey: this.configService.get<string>('authConfig.jwtRefreshTokenSecretKey'),
-      jweJwtRefreshTokenExpireTime: this.configService.get<string>('authConfig.jweJwtRefreshTokenExpireTime')
+      jweAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey'),
+      jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey'),
+      jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtAccessTokenExpireTime'),
+      jweRefreshTokenSecretKey: this.configService.get<string>('authConfig.token.jweRefreshTokenSecretKey'),
+      jwtRefreshTokenSecretKey: this.configService.get<string>('authConfig.token.jwtRefreshTokenSecretKey'),
+      jweJwtRefreshTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtRefreshTokenExpireTime')
     };
   }
 
@@ -97,18 +99,22 @@ export class AuthService {
     }
 
     const hashedPassword: string = await bcrypt.hash(signupData.password, this.saltRounds);
-    const CreatedUserInterface: CreatedUserInterface = await this.userService.createUser(signupData, hashedPassword, 'default', false); //parameter(signupData, hashedPassword, loginSource, verified)
+    const CreatedUser: CreatedUserInterface = await this.userService.createUser(signupData, hashedPassword, 'default', false); //parameter(signupData, hashedPassword, loginSource, verified)
 
-    await this.sendOtp(CreatedUserInterface.email);
+    await this.sendOtp(CreatedUser.email);
 
     // Remove sensitive fields from the user data
-    const sanitizedUserDataForResponse: SignupResponseUserDto = this.commonAuthService.removeSensitiveData(CreatedUserInterface, [
+    const sanitizedUserDataForResponse: SignupResponseUserDto = this.commonAuthService.removeSensitiveData(CreatedUser, [
       'password',
       'verified',
       'isForgetPassword',
       'mfaEnabled',
       'failedOtpAttempts'
     ]);
+
+    // Update lastActivityAt
+    await this.lastActivityService.updateLastActivityInDB(CreatedUser.id);
+
     return {
       success: true,
       message: `${signupSuccessful} and please ${verifyYourUser}`,
@@ -116,11 +122,16 @@ export class AuthService {
     };
   }
 
-  /**
-   * Sign in with email and password. If MFA is enabled, send OTP.
-   */
   async signin(signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
     const existingUser: ExistingUserInterface = await this.userService.findUserByEmail(signinData.email);
+
+    // Check if user exists, if not throw UnauthorizedException
+    if (!existingUser) {
+      throw new UnauthorizedException('Unauthorized:');
+    }
+
+    // Update lastActivityAt
+    await this.lastActivityService.updateLastActivityInDB(existingUser.id);
 
     // Step 1: Authenticate user with email and password
     this.userService.authenticateUser(existingUser, signinData.password);
@@ -178,6 +189,9 @@ export class AuthService {
       'isForgetPassword'
     ]);
 
+    // Update lastActivityAt
+    await this.lastActivityService.updateLastActivityInDB(existingUser.id);
+
     const token: Tokens = await this.tokenService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
     return this.buildSigninResponse(sanitizedUserDataForResponse, token, signinSuccessful);
   }
@@ -207,6 +221,10 @@ export class AuthService {
       'failedOtpAttempts',
       'accountLockedUntil'
     ]);
+
+    // Update lastActivityAt
+    await this.lastActivityService.updateLastActivityInDB(existingUser.id);
+
     const token: Tokens = await this.tokenService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
     return this.buildSigninResponse(sanitizedUserDataForResponse, token, otpAuthorised);
   }

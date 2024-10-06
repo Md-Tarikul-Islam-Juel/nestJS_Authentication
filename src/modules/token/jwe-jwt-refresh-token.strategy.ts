@@ -1,7 +1,7 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import {Injectable, ExecutionContext, UnauthorizedException} from '@nestjs/common';
+import {AuthGuard} from '@nestjs/passport';
+import {JwtService} from '@nestjs/jwt';
+import {ConfigService} from '@nestjs/config';
 import * as jose from 'jose';
 
 @Injectable()
@@ -29,6 +29,7 @@ export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guar
         jwtToken = token;
       }
       await this.validateJwtToken(jwtToken, request);
+
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid token');
@@ -49,14 +50,14 @@ export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guar
   }
 
   private async decryptJweToken(jweToken: string): Promise<string> {
-    const secret = this.configService.get<string>('JWE_REFRESH_TOKEN_SECRET');
-    const { plaintext } = await jose.compactDecrypt(jweToken, Buffer.from(secret, 'utf-8'));
+    const secret = this.configService.get<string>('tokenConfig.token.jweRefreshTokenSecretKey');
+    const {plaintext} = await jose.compactDecrypt(jweToken, Buffer.from(secret, 'utf-8'));
     return new TextDecoder().decode(plaintext);
   }
 
   private async validateJwtToken(token: string, request: any) {
-    const secret = this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET');
-    const decoded = this.jwtService.verify(token, { secret });
+    const secret = this.configService.get<string>('tokenConfig.token.jwtRefreshTokenSecretKey');
+    const decoded = this.jwtService.verify(token, {secret});
     request.user = decoded;
   }
 }

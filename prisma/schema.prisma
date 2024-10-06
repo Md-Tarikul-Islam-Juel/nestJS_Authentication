@@ -25,6 +25,8 @@ model User {
   failedOtpAttempts  Int       @default(0) // Track failed OTP attempts
   accountLockedUntil DateTime? // If account gets locked due to too many failed attempts
 
+  lastActivityAt DateTime? // to track last active time of a user
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

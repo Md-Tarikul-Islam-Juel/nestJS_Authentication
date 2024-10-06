@@ -1,61 +1,50 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Post, Req, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
-import { AuthService } from '../services/auth.service';
-import { LoggerService } from '../../logger/logger.service';
-import {
-  ChangePasswordDto,
-  ForgetPasswordDto,
-  ResendDto,
-  SigninDto,
-  SignupDto,
-  VerificationDto,
-} from '../dtos/authRequest.dto';
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {Body, Controller, Get, HttpCode, HttpStatus, Inject, Post, Req, UseGuards, UseInterceptors} from '@nestjs/common';
+import {AuthGuard} from '@nestjs/passport';
+import {Request} from 'express';
+import {AuthService} from '../services/auth.service';
+import {LoggerService} from '../../logger/logger.service';
+import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../dtos/authRequest.dto';
+import {ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 
 import {
   ChangePasswordErrorResponseDto,
-  ChangePasswordSuccessResponseDto, ChangePasswordUnverifiedResponseDto,
+  ChangePasswordSuccessResponseDto,
+  ChangePasswordUnverifiedResponseDto,
   ForgetPasswordErrorResponseDto,
-  ForgetPasswordSuccessResponseDto, RefreshTokenSuccessResponseDto,
+  ForgetPasswordSuccessResponseDto,
+  RefreshTokenSuccessResponseDto,
   ResendErrorResponseDto,
   ResendSuccessResponseDto,
-  SigninSuccessResponseDto, SigninUnauthorizedResponseDto, SigninUserUnverifiedResponseDto,
+  SigninSuccessResponseDto,
+  SigninUnauthorizedResponseDto,
+  SigninUserUnverifiedResponseDto,
   SignupSuccessResponseDto,
-  SignupUserAlreadyExistResponseDto, VerificationErrorResponseDto,
+  SignupUserAlreadyExistResponseDto,
+  VerificationErrorResponseDto
 } from '../dtos/authRespnse.dto';
-import {
-  AUTH,
-  change_password,
-  forget_password_otp_send, REFRESH_TOKEN,
-  resend_otp,
-  SIGNIN,
-  SIGNUP,
-  verification_otp,
-} from '../utils/string';
-import { JweJwtAccessTokenStrategy } from '../../token/jwe-jwt-access-token.strategy';
-import { JweJwtRefreshTokenStrategy } from '../../token/jwe-jwt-refresh-token.strategy';
-
+import {AUTH, change_password, forget_password_otp_send, REFRESH_TOKEN, resend_otp, SIGNIN, SIGNUP, verification_otp} from '../utils/string';
+import {JweJwtAccessTokenStrategy} from '../../token/jwe-jwt-access-token.strategy';
+import {JweJwtRefreshTokenStrategy} from '../../token/jwe-jwt-refresh-token.strategy';
+import {TrackLastActivityInterceptor} from '../Interceptor/trackLastActivityInterceptor.interceptor';
 
 @ApiTags('Auth')
 @Controller(AUTH)
+@UseInterceptors(TrackLastActivityInterceptor)// to track user last uses time based on token
 export class AuthController {
   constructor(
     @Inject(AuthService)
     private readonly authService: AuthService,
-    private logger: LoggerService,
-  ) {
-  }
+  ) {}
 
   @HttpCode(HttpStatus.CREATED)
   @Post(SIGNUP)
-  @ApiOperation({ summary: 'Sign up user' })
-  @ApiBody({ type: SignupDto })
-  @ApiCreatedResponse({ description: 'Sign up success', type: SignupSuccessResponseDto })
+  @ApiOperation({summary: 'Sign up user'})
+  @ApiBody({type: SignupDto})
+  @ApiCreatedResponse({description: 'Sign up success', type: SignupSuccessResponseDto})
   @ApiResponse({
     status: HttpStatus.CONFLICT,
     description: 'User already exist',
-    type: SignupUserAlreadyExistResponseDto,
+    type: SignupUserAlreadyExistResponseDto
   })
   async signup(@Body() signupData: SignupDto): Promise<SignupSuccessResponseDto | SignupUserAlreadyExistResponseDto> {
     return this.authService.signup(signupData);
@@ -63,18 +52,18 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post(SIGNIN)
-  @ApiOperation({ summary: 'Sign in user' })
-  @ApiBody({ type: SigninDto })
-  @ApiOkResponse({ description: 'Sign in success', type: SigninSuccessResponseDto })
+  @ApiOperation({summary: 'Sign in user'})
+  @ApiBody({type: SigninDto})
+  @ApiOkResponse({description: 'Sign in success', type: SigninSuccessResponseDto})
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized access',
-    type: SigninUnauthorizedResponseDto,
+    type: SigninUnauthorizedResponseDto
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
     description: 'Unverified user',
-    type: SigninUserUnverifiedResponseDto,
+    type: SigninUserUnverifiedResponseDto
   })
   async signin(@Body() signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
     return await this.authService.signin(signinData);
@@ -82,29 +71,27 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post(verification_otp)
-  @ApiOperation({ summary: 'Verify OTP' })
-  @ApiBody({ type: VerificationDto })
-  @ApiOkResponse({ description: 'OTP verification success', type: SigninSuccessResponseDto })
+  @ApiOperation({summary: 'Verify OTP'})
+  @ApiBody({type: VerificationDto})
+  @ApiOkResponse({description: 'OTP verification success', type: SigninSuccessResponseDto})
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'OTP verification failed',
-    type: VerificationErrorResponseDto,
+    type: VerificationErrorResponseDto
   })
-  async verificationOtp(
-    @Body() EmailVerificationByOTPData: VerificationDto,
-  ): Promise<SigninSuccessResponseDto | VerificationErrorResponseDto> {
+  async verificationOtp(@Body() EmailVerificationByOTPData: VerificationDto): Promise<SigninSuccessResponseDto | VerificationErrorResponseDto> {
     return await this.authService.verificationOtp(EmailVerificationByOTPData);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post(resend_otp)
-  @ApiOperation({ summary: 'Resend OTP email' })
-  @ApiBody({ type: ResendDto })
-  @ApiOkResponse({ description: 'OTP email sent successfully', type: ResendSuccessResponseDto })
+  @ApiOperation({summary: 'Resend OTP email'})
+  @ApiBody({type: ResendDto})
+  @ApiOkResponse({description: 'OTP email sent successfully', type: ResendSuccessResponseDto})
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'OTP email sending failed',
-    type: ResendErrorResponseDto,
+    type: ResendErrorResponseDto
   })
   async resend(@Body() ResendOTPData: ResendDto): Promise<ResendSuccessResponseDto | ResendErrorResponseDto> {
     return await this.authService.resend(ResendOTPData);
@@ -120,18 +107,18 @@ export class AuthController {
       1. Call the Forget Password API to sent OTP via email({baseUrl}/auth/${forget_password_otp_send}).
       2. Verify the user's identity by entering the OTP received via email({baseUrl}/auth/${verification_otp}).
       3. Call the Change Password API to reset the password, providing the newPassword field in request body({baseUrl}/auth/${change_password}).
-    `,
+    `
   })
-  @ApiBody({ type: ForgetPasswordDto })
-  @ApiOkResponse({ description: 'OTP email sent successfully', type: ForgetPasswordSuccessResponseDto })
+  @ApiBody({type: ForgetPasswordDto})
+  @ApiOkResponse({description: 'OTP email sent successfully', type: ForgetPasswordSuccessResponseDto})
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'OTP email sending failed',
-    type: ForgetPasswordErrorResponseDto,
+    type: ForgetPasswordErrorResponseDto
   })
   async forgetPassword(
     @Body()
-      ForgetPasswordSendEmailForOTPData: ForgetPasswordDto,
+    ForgetPasswordSendEmailForOTPData: ForgetPasswordDto
   ): Promise<ForgetPasswordSuccessResponseDto | ForgetPasswordErrorResponseDto> {
     return await this.authService.forgetPassword(ForgetPasswordSendEmailForOTPData);
   }
@@ -144,61 +131,59 @@ export class AuthController {
     description: `
       1) For forget password only newPassword is required 
       2) For change password oldPassword & newPassword both fields are required
-    `,
+    `
   })
-  @ApiBody({ type: ChangePasswordDto })
+  @ApiBody({type: ChangePasswordDto})
   @ApiOkResponse({
     description: 'Password changed successfully',
-    type: ChangePasswordSuccessResponseDto,
+    type: ChangePasswordSuccessResponseDto
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Failed to change password.service.ts',
-    type: ChangePasswordErrorResponseDto,
+    type: ChangePasswordErrorResponseDto
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
     description: 'Unverified user',
-    type: ChangePasswordUnverifiedResponseDto,
+    type: ChangePasswordUnverifiedResponseDto
   })
   async changePassword(
     @Body() ChangePasswordData: ChangePasswordDto,
-    @Req() req: Request,
+    @Req() req: Request
   ): Promise<ChangePasswordSuccessResponseDto | ChangePasswordErrorResponseDto | ChangePasswordUnverifiedResponseDto> {
     return await this.authService.changePassword(ChangePasswordData, req);
   }
 
-
   @UseGuards(JweJwtRefreshTokenStrategy)
   @HttpCode(HttpStatus.OK)
   @Get(REFRESH_TOKEN)
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiOkResponse({ description: 'Access token refreshed successfully', type: RefreshTokenSuccessResponseDto })
+  @ApiOperation({summary: 'Refresh access token'})
+  @ApiOkResponse({description: 'Access token refreshed successfully', type: RefreshTokenSuccessResponseDto})
   async refreshToken(@Req() req: Request): Promise<RefreshTokenSuccessResponseDto> {
     return await this.authService.refreshToken(req);
   }
-
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
     summary: 'Start Google OAuth flow',
-    description: 'Redirects to Google for authentication. This is handled externally by Google OAuth services. Run this URL in the browser (http://localhost:3000/auth/google).',
+    description:
+      'Redirects to Google for authentication. This is handled externally by Google OAuth services. Run this URL in the browser (http://localhost:3000/auth/google).'
   })
-  @ApiOkResponse({ description: 'Initiates Google OAuth flow' })
-  async googleAuth(): Promise<void> {
-  }
+  @ApiOkResponse({description: 'Initiates Google OAuth flow'})
+  async googleAuth(): Promise<void> {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
     summary: 'Google OAuth callback',
-    description: 'Handles the callback after Google authentication. This endpoint processes the authentication result from Google.',
+    description: 'Handles the callback after Google authentication. This endpoint processes the authentication result from Google.'
   })
-  @ApiOkResponse({ description: 'Authentication successful, returns user data and tokens' })
+  @ApiOkResponse({description: 'Authentication successful, returns user data and tokens'})
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
-    description: 'Authentication failed due to invalid or expired credentials.',
+    description: 'Authentication failed due to invalid or expired credentials.'
   })
   async googleAuthRedirect(@Req() req) {
     return await this.authService.oAuthSignin(req.user);
@@ -208,25 +193,24 @@ export class AuthController {
   @UseGuards(AuthGuard('facebook'))
   @ApiOperation({
     summary: 'Start Facebook OAuth flow',
-    description: 'Redirects to Facebook for authentication. This is handled externally by Facebook OAuth services. Run this URL in the browser (http://localhost:3000/auth/facebook).',
+    description:
+      'Redirects to Facebook for authentication. This is handled externally by Facebook OAuth services. Run this URL in the browser (http://localhost:3000/auth/facebook).'
   })
-  @ApiOkResponse({ description: 'Initiates Facebook OAuth flow' })
-  async facebookAuth(): Promise<void> {
-  }
+  @ApiOkResponse({description: 'Initiates Facebook OAuth flow'})
+  async facebookAuth(): Promise<void> {}
 
   @Get('facebook/callback')
   @UseGuards(AuthGuard('facebook'))
   @ApiOperation({
     summary: 'Facebook OAuth callback',
-    description: 'Handles the callback after Facebook authentication. This endpoint processes the authentication result from Facebook.',
+    description: 'Handles the callback after Facebook authentication. This endpoint processes the authentication result from Facebook.'
   })
-  @ApiOkResponse({ description: 'Authentication successful, returns user data and tokens' })
+  @ApiOkResponse({description: 'Authentication successful, returns user data and tokens'})
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
-    description: 'Authentication failed due to invalid or expired credentials.',
+    description: 'Authentication failed due to invalid or expired credentials.'
   })
   async facebookAuthRedirect(@Req() req) {
     return await this.authService.oAuthSignin(req.user);
   }
 }
-

@@ -1,104 +1,3 @@
-//
-// import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
-// import * as otpGenerator from 'otp-generator';
-// import { LoggerService } from '../../logger/logger.service';
-// import { RedisService } from '../../redis/services/redis.service';
-// import { invalidOrExpiredOTP } from '../utils/string';
-//
-// @Injectable()
-// export class OtpService {
-//   constructor(
-//     private readonly redisService: RedisService,
-//     private readonly logger: LoggerService,
-//   ) {}
-//
-//   /**
-//    * Generate a one-time password (OTP)
-//    * @param length - length of the OTP to generate
-//    * @returns generated OTP string
-//    */
-//   generateOtp(length: number): string {
-//     return otpGenerator.generate(length, {
-//       digits: true,
-//       upperCase: false,
-//       lowercase: false,
-//       upperCaseAlphabets: false,
-//       lowerCaseAlphabets: false,
-//       specialChars: false,
-//     });
-//   }
-//
-//   /**
-//    * Store the OTP in Redis with an expiration time
-//    * @param email - email address associated with the OTP
-//    * @param otp - the generated OTP
-//    * @param otpExpireTime - expiration time for the OTP in seconds
-//    */
-//   async storeOtp(
-//     email: string,
-//     otp: string,
-//     otpExpireTime: number,
-//   ): Promise<void> {
-//     try {
-//       await this.redisService.set(`otp:${email}`, otp, otpExpireTime * 60); // Store OTP with TTL in Redis
-//       this.logger.info({
-//         message: `OTP stored for email: ${email}`,
-//         details: { otp, otpExpireTime },
-//       });
-//     } catch (error) {
-//       this.logger.error({
-//         message: 'Failed to store OTP in Redis',
-//         details: error,
-//       });
-//     }
-//   }
-//
-//   /**
-//    * Verify the OTP from Redis
-//    * @param email - email associated with the OTP
-//    * @param otp - OTP to verify
-//    * @throws UnauthorizedException if OTP is invalid or expired
-//    */
-//   async verifyOtp(email: string, otp: string): Promise<void> {
-//     try {
-//       const storedOtp = await this.redisService.get(`otp:${email}`); // Retrieve OTP from Redis
-//       if (!storedOtp || storedOtp !== otp) {
-//         this.logger.warn({
-//           message: `Invalid or expired OTP for email: ${email}`,
-//           details: { providedOtp: otp, storedOtp },
-//         });
-//
-//         throw new UnauthorizedException(invalidOrExpiredOTP);
-//       }
-//       this.logger.info({
-//         message: `OTP verified successfully for email: ${email}`,
-//       });
-//     } catch (error) {
-//       this.logger.error({
-//         message: 'Error during OTP verification',
-//         details: error,
-//       });
-//     }
-//   }
-//
-//   /**
-//    * Delete the OTP from Redis after successful verification
-//    * @param email - email associated with the OTP
-//    */
-//   async deleteOtp(email: string): Promise<void> {
-//     try {
-//       await this.redisService.del(`otp:${email}`); // Use the delete method to remove OTP from Redis
-//       this.logger.info({ message: `OTP deleted for email: ${email}` });
-//     } catch (error) {
-//       this.logger.error({
-//         message: 'Failed to delete OTP from Redis',
-//         details: error,
-//       });
-//       throw new InternalServerErrorException('Failed to delete OTP');
-//     }
-//   }
-// }
-
 import {Injectable, InternalServerErrorException, UnauthorizedException} from '@nestjs/common';
 import * as otpGenerator from 'otp-generator';
 import {LoggerService} from '../../logger/logger.service';
@@ -118,8 +17,8 @@ export class OtpService {
     private readonly configService: ConfigService
   ) {
     // Initialize values from the .env file
-    this.maxFailedAttempts = this.configService.get<number>('OTP_MAX_FAILED_ATTEMPTS') || 5; // Default to 5 if not set
-    this.lockoutTime = this.configService.get<number>('OTP_LOCKOUT_TIME') || 5; // Default to 5 minutes if not set
+    this.maxFailedAttempts = this.configService.get<number>('authConfig.otp.otpMaxFailedAttempts');
+    this.lockoutTime = this.configService.get<number>('authConfig.otp.otpLockoutTime');
   }
 
   /**

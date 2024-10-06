@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import Redis from 'ioredis';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class RedisService {
   constructor() {
     this.redisClient = new Redis({
       host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT),
+      port: Number(process.env.REDIS_PORT)
     });
   }
 
@@ -22,5 +22,10 @@ export class RedisService {
 
   async del(key: string): Promise<void> {
     await this.redisClient.del(key);
+  }
+
+  // Fetch keys with a pattern (used in batch update)
+  async keys(pattern: string): Promise<string[]> {
+    return this.redisClient.keys(pattern);
   }
 }
