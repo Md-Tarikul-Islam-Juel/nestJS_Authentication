@@ -1,17 +1,17 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { BaseResponseDto, Tokens, UserData } from './auth.base.dto';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import {ApiProperty} from '@nestjs/swagger';
+import {BaseResponseDto, Tokens, UserData} from './auth.base.dto';
+import {IsEmail, IsNotEmpty, IsString} from 'class-validator';
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------
 // =================================================================
 export class SignupSuccessResponseDto extends BaseResponseDto {
-  @ApiProperty({ description: 'Data of the signed-up user', type: () => UserData })
-  data: { user: UserData };
+  @ApiProperty({description: 'Data of the signed-up user', type: () => UserData})
+  data: {user: UserData};
 }
 
 export class SignupUserAlreadyExistResponseDto extends BaseResponseDto {
-  @ApiProperty({ description: 'Message indicating the reason for failure', example: 'User already exists' })
+  @ApiProperty({description: 'Message indicating the reason for failure', example: 'User already exists'})
   message: string = 'User already exists';
 }
 
@@ -38,21 +38,30 @@ export class SignupResponseUserDto {
 export class SigninSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Tokens object containing access and refresh tokens',
-    type: Tokens,
+    type: Tokens
   })
   tokens: Tokens;
 
-  @ApiProperty({ description: 'Data of the signed-in user', type: () => UserData })
-  data: { user: UserData };
+  @ApiProperty({description: 'Data of the signed-in user', type: () => UserData})
+  data: {user: UserData};
+
+  @ApiProperty({
+    description: 'MFA information, returned if MFA is required',
+    required: false // Optional field, present only when MFA is required
+  })
+  mfa?: {
+    enabled: boolean;
+    type: string;
+  }; // Optional MFA field, only present when MFA is required
 }
 
 export class SigninUnauthorizedResponseDto extends BaseResponseDto {
-  @ApiProperty({ description: 'Message indicating unauthorized access', example: 'Unauthorized' })
+  @ApiProperty({description: 'Message indicating unauthorized access', example: 'Unauthorized'})
   message: string = 'Unauthorized';
 }
 
 export class SigninUserUnverifiedResponseDto extends BaseResponseDto {
-  @ApiProperty({ description: 'Message indicating Unverified user', example: 'Please verify your user' })
+  @ApiProperty({description: 'Message indicating Unverified user', example: 'Please verify your user'})
   message: string = 'Please verify your user';
 }
 
@@ -79,7 +88,7 @@ export class SignInResponseUserDto {
 export class VerificationErrorResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the reason for OTP verification failure',
-    example: 'OTP verification failed',
+    example: 'OTP verification failed'
   })
   message: string = 'OTP verification failed';
 }
@@ -90,7 +99,7 @@ export class VerificationErrorResponseDto extends BaseResponseDto {
 export class ResendSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the result of the OTP email sending process',
-    example: 'OTP email sent',
+    example: 'OTP email sent'
   })
   message: string = 'OTP email sent';
 }
@@ -98,7 +107,7 @@ export class ResendSuccessResponseDto extends BaseResponseDto {
 export class ResendErrorResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the reason for OTP email sending failure',
-    example: 'Failed to send OTP email',
+    example: 'Failed to send OTP email'
   })
   message: string = 'Failed to send OTP email';
 }
@@ -109,7 +118,7 @@ export class ResendErrorResponseDto extends BaseResponseDto {
 export class ForgetPasswordSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the result of the OTP email sending process',
-    example: 'OTP email sent',
+    example: 'OTP email sent'
   })
   message: string = 'OTP email sent';
 }
@@ -117,7 +126,7 @@ export class ForgetPasswordSuccessResponseDto extends BaseResponseDto {
 export class ForgetPasswordErrorResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the reason for OTP email sending failure',
-    example: 'Failed to send OTP email',
+    example: 'Failed to send OTP email'
   })
   message: string = 'Failed to send OTP email';
 }
@@ -128,7 +137,7 @@ export class ForgetPasswordErrorResponseDto extends BaseResponseDto {
 export class ChangePasswordSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the result of the password.service.ts change',
-    example: 'Your password.service.ts has been updated',
+    example: 'Your password.service.ts has been updated'
   })
   message: string = 'Your password.service.ts has been updated';
 }
@@ -136,13 +145,13 @@ export class ChangePasswordSuccessResponseDto extends BaseResponseDto {
 export class ChangePasswordErrorResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Error message indicating the reason for the password.service.ts change failure',
-    example: 'Failed to change password.service.ts',
+    example: 'Failed to change password.service.ts'
   })
   message: string = 'Failed to change password.service.ts';
 }
 
 export class ChangePasswordUnverifiedResponseDto extends BaseResponseDto {
-  @ApiProperty({ description: 'Message indicating Unverified user', example: 'Please verify your user' })
+  @ApiProperty({description: 'Message indicating Unverified user', example: 'Please verify your user'})
   message: string = 'Please verify your user';
 }
 
@@ -152,7 +161,7 @@ export class ChangePasswordUnverifiedResponseDto extends BaseResponseDto {
 export class RefreshTokenSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Tokens object containing access and refresh tokens',
-    type: Tokens,
+    type: Tokens
   })
   tokens: Tokens;
 }

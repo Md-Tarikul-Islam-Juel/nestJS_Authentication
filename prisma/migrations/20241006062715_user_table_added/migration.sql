@@ -9,6 +9,9 @@ CREATE TABLE "users" (
     "authorizerId" TEXT,
     "verified" BOOLEAN NOT NULL,
     "isForgetPassword" BOOLEAN NOT NULL,
+    "mfaEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "failedOtpAttempts" INTEGER NOT NULL DEFAULT 0,
+    "accountLockedUntil" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

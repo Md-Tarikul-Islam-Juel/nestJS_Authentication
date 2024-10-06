@@ -6,6 +6,9 @@ export interface ExistingUserInterface {
   lastName: string;
   verified: boolean;
   isForgetPassword: boolean;
+  mfaEnabled: boolean;
+  failedOtpAttempts: number;
+  accountLockedUntil?: Date;
 }
 
 export interface CreatedUserInterface {

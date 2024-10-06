@@ -21,6 +21,10 @@ model User {
   verified         Boolean
   isForgetPassword Boolean
 
+  mfaEnabled         Boolean   @default(false) // Track if MFA is enabled
+  failedOtpAttempts  Int       @default(0) // Track failed OTP attempts
+  accountLockedUntil DateTime? // If account gets locked due to too many failed attempts
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
