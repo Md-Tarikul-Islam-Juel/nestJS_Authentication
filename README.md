@@ -1,3 +1,4 @@
+
 # NestJS Authentication
 
 <p align="center">
@@ -202,6 +203,8 @@ BCRYPT_SALT_ROUNDS=14
 # OTP (One-Time Password) Configuration
 # ======================================================
 OTP_EXPIRE_TIME=5
+OTP_MAX_FAILED_ATTEMPTS=5
+OTP_LOCKOUT_TIME=5
 
 # ======================================================
 # JWT and JWE Secret Keys
@@ -491,6 +494,22 @@ PASSWORD_BLACKLIST_COMMON=true
 PASSWORD_EXCLUDE_USERNAME=true
 ```
 
+## 🔐 Multi-Factor Authentication (MFA) Support
+
+This **NestJS Authentication Boilerplate** includes support for **Multi-Factor Authentication (MFA)** using email. When MFA is enabled, after entering the correct credentials, users will receive a **One-Time Password (OTP)** via email to complete the login process.
+
+- **MFA Enabled**: Users receive an OTP after signing in, required to finalize the authentication.
+- **Customizable**: MFA is optional and can be enabled or disabled for each user.
+- **Lockout Protection**: After a set number of failed OTP attempts, the account will be temporarily locked for enhanced security.
+- **Environment Control**: You can configure the following settings via the `.env` file:
+    - `OTP_EXPIRE_TIME`: Time (in minutes) before the OTP expires. Default is 5 minutes.
+    - `OTP_MAX_FAILED_ATTEMPTS`: Maximum number of allowed failed OTP attempts before account lockout. Default is 5 attempts.
+    - `OTP_LOCKOUT_TIME`: Time (in minutes) for which the account will be locked after exceeding the maximum failed OTP attempts. Default is 5 minutes.
+
+MFA adds an extra layer of security by ensuring that even if a user's password is compromised, unauthorized access to the account is still prevented.
+
+
+
 ## 📦 Dockerize Your NestJS Application for Production
 
 For detailed instructions on how to Dockerize your NestJS application for production, refer to this comprehensive guide:
@@ -509,6 +528,7 @@ For any inquiries or further assistance, feel free to reach out:
   <a href="mailto:md.tarikulislamjuel@gmail.com"><img src="https://img.icons8.com/color/48/000000/gmail.png" alt="Gmail" style="margin: 0 15px;"/></a>
   <a href="https://www.linkedin.com/in/tarikulislamjuel/"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn" style="margin: 0 15px;"/></a>
 </p>
+
 
 
 
