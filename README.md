@@ -18,6 +18,7 @@ The **NestJS Authentication Boilerplate** is a robust and flexible solution for 
 **NestJS** projects. Empowering you with a rich feature set, it simplifies the process of managing user sign-up,
 sign-in, email OTP verification, password recovery, and more.
 
+
 ## 🚀 Key Features: Boost your project speed
 
 | Feature                    | Description                                                                                                | API Type | JWT Token Protection |
@@ -27,9 +28,13 @@ sign-in, email OTP verification, password recovery, and more.
 | **OTP Resend API**         | Never let users get stuck! Offer convenient OTP resend options for seamless account activation.            |   REST   |          No          |
 | **Forget Password API**    | Forget passwords? No problem! Our secure recovery process helps users regain access quickly.               |   REST   |          No          |
 | **Change Password API**    | Take control of your account security with effortless password changes.                                    |   REST   |         Yes          |
-| **Refresh token API**      | Allowing clients to securely refresh access token.                                                         |   REST   |         Yes          |
+| **Refresh Token API**      | Allowing clients to securely refresh access token.                                                         |   REST   |         Yes          |
+| **Logout API**             | Log users out of all devices by invalidating their refresh token through logout PIN validation.            |   REST   |         Yes          |
+| **Track User Last Active Time** | Monitor user engagement by tracking the last time they were active in the application.                  |      |                  |
 | **OAuth**                  | Allowing clients to sign-in with Google, Facebook. (Note: configure your OAuth console to get credentials) |   REST   |          No          |
 | **Get & Update User**      | Efficiently retrieve and update user information using GraphQL queries and mutations.                      | GraphQL  |         Yes          |
+
+
 
 ## 🌟 Technology Stack: Built with Modern Tools
 
