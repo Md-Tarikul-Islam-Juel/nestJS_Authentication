@@ -134,7 +134,7 @@ Replace `{{url}}` with the appropriate base URL of your API.
 
 4. **Setup Docker:**
     - Ensure Docker is installed on your machine.
-    - Run `docker-compose up -d` to start the PostgreSQL DB container.
+    - Run `docker-compose -f docker-compose-dev.yml up -d` to start the PostgreSQL DB container.
 
 5. **Generate Prisma Client:**
     - Run `npx prisma generate` to generate the Prisma client.
