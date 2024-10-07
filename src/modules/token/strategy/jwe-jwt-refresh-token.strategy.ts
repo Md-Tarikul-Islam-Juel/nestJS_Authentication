@@ -3,12 +3,16 @@ import {AuthGuard} from '@nestjs/passport';
 import {JwtService} from '@nestjs/jwt';
 import {ConfigService} from '@nestjs/config';
 import * as jose from 'jose';
+import {LoggerService} from '../../logger/logger.service';
+import {LogoutTokenValidateService} from '../service/logoutTokenValidateService.service';
 
 @Injectable()
 export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guard') {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly logoutTokenValidateService: LogoutTokenValidateService,
+    private readonly logger: LoggerService
   ) {
     super();
   }
@@ -29,6 +33,18 @@ export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guar
         jwtToken = token;
       }
       await this.validateJwtToken(jwtToken, request);
+
+      // Validate logoutPin
+      const userId = request.user.id;
+      const logoutPinFromDb = await this.logoutTokenValidateService.getLogoutPinById(userId);
+      if (!logoutPinFromDb) {
+        this.logger.error({
+          message: `${userId} 'no logoutPinFromDb found'`
+        });
+        throw new UnauthorizedException('Invalid token');
+      } else if (logoutPinFromDb !== request.user.logoutPin) {
+        throw new UnauthorizedException('Invalid token');
+      }
 
       return true;
     } catch (err) {

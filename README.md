@@ -1,4 +1,3 @@
-
 # NestJS Authentication
 
 <p align="center">
@@ -459,10 +458,10 @@ After OTP verification you already received an accessToken. Using this accessTok
 
 here you dont need to use oldPassword field.
 
-
 ## 🔐 Password Validation Configuration
 
-Easily customize password validation rules for your application using the environment variables in the `.env` file. This allows you to enforce specific security requirements based on your project's needs.
+Easily customize password validation rules for your application using the environment variables in the `.env` file. This
+allows you to enforce specific security requirements based on your project's needs.
 
 ### Configuration Options:
 
@@ -471,9 +470,11 @@ Easily customize password validation rules for your application using the enviro
 - **`PASSWORD_REQUIRE_UPPERCASE`**: Requires at least one uppercase letter (`true` or `false`).
 - **`PASSWORD_REQUIRE_LOWERCASE`**: Requires at least one lowercase letter (`true` or `false`).
 - **`PASSWORD_REQUIRE_NUMBERS`**: Requires at least one numeric digit (`true` or `false`).
-- **`PASSWORD_REQUIRE_SPECIAL_CHARACTERS`**: Requires at least one special character (e.g., `!@#$%`) (`true` or `false`).
+- **`PASSWORD_REQUIRE_SPECIAL_CHARACTERS`**: Requires at least one special character (e.g., `!@#$%`) (`true` or
+  `false`).
 - **`PASSWORD_DISALLOW_REPEATING`**: Prevents the use of consecutive repeating characters (`true` or `false`).
-- **`PASSWORD_DISALLOW_SEQUENTIAL`**: Prevents the use of sequential characters (e.g., `123`, `abc`) (`true` or `false`).
+- **`PASSWORD_DISALLOW_SEQUENTIAL`**: Prevents the use of sequential characters (e.g., `123`, `abc`) (`true` or
+  `false`).
 - **`PASSWORD_BLACKLIST_COMMON`**: Blocks common passwords like `password`, `123456` (`true` or `false`).
 - **`PASSWORD_EXCLUDE_USERNAME`**: Ensures the password does not contain the username (`true` or `false`).
 
@@ -496,19 +497,27 @@ PASSWORD_EXCLUDE_USERNAME=true
 
 ## 🔐 Multi-Factor Authentication (MFA) Support
 
-This **NestJS Authentication Boilerplate** includes support for **Multi-Factor Authentication (MFA)** using email. When MFA is enabled, after entering the correct credentials, users will receive a **One-Time Password (OTP)** via email to complete the login process.
+This **NestJS Authentication Boilerplate** includes support for **Multi-Factor Authentication (MFA)** using email. When
+MFA is enabled, after entering the correct credentials, users will receive a **One-Time Password (OTP)** via email to
+complete the login process.
 
 - **MFA Enabled**: Users receive an OTP after signing in, required to finalize the authentication.
 - **Customizable**: MFA is optional and can be enabled or disabled for each user.
-- **Lockout Protection**: After a set number of failed OTP attempts, the account will be temporarily locked for enhanced security.
+- **Lockout Protection**: After a set number of failed OTP attempts, the account will be temporarily locked for enhanced
+  security.
 - **Environment Control**: You can configure the following settings via the `.env` file:
     - `OTP_EXPIRE_TIME`: Time (in minutes) before the OTP expires. Default is 5 minutes.
-    - `OTP_MAX_FAILED_ATTEMPTS`: Maximum number of allowed failed OTP attempts before account lockout. Default is 5 attempts.
-    - `OTP_LOCKOUT_TIME`: Time (in minutes) for which the account will be locked after exceeding the maximum failed OTP attempts. Default is 5 minutes.
+    - `OTP_MAX_FAILED_ATTEMPTS`: Maximum number of allowed failed OTP attempts before account lockout. Default is 5
+      attempts.
+    - `OTP_LOCKOUT_TIME`: Time (in minutes) for which the account will be locked after exceeding the maximum failed OTP
+      attempts. Default is 5 minutes.
 
-MFA adds an extra layer of security by ensuring that even if a user's password is compromised, unauthorized access to the account is still prevented.
+MFA adds an extra layer of security by ensuring that even if a user's password is compromised, unauthorized access to
+the account is still prevented.
 
+## Logout Process Documentation
 
+For detailed information on the logout process, see [Logout logic process](documents/logics_md/logout_process.md).
 
 ## 📦 Dockerize Your NestJS Application for Production
 

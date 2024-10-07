@@ -31,7 +31,8 @@ export class UserService {
         isForgetPassword: false,
         password: password,
         mfaEnabled: userData.mfaEnabled || false,
-        failedOtpAttempts: 0
+        failedOtpAttempts: 0,
+        logoutPin: this.commonAuthService.generateOtp(6)
       },
       create: {
         ...userData,
@@ -40,7 +41,8 @@ export class UserService {
         isForgetPassword: false,
         password: password,
         mfaEnabled: userData.mfaEnabled || false,
-        failedOtpAttempts: 0
+        failedOtpAttempts: 0,
+        logoutPin: this.commonAuthService.generateOtp(6)
       },
       select: {
         id: true,

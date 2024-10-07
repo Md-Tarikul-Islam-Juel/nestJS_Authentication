@@ -2,7 +2,6 @@ import {Body, Controller, Get, HttpCode, HttpStatus, Inject, Post, Req, UseGuard
 import {AuthGuard} from '@nestjs/passport';
 import {Request} from 'express';
 import {AuthService} from '../services/auth.service';
-import {LoggerService} from '../../logger/logger.service';
 import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../dtos/authRequest.dto';
 import {ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 
@@ -22,18 +21,30 @@ import {
   SignupUserAlreadyExistResponseDto,
   VerificationErrorResponseDto
 } from '../dtos/authRespnse.dto';
-import {AUTH, change_password, forget_password_otp_send, REFRESH_TOKEN, resend_otp, SIGNIN, SIGNUP, verification_otp} from '../utils/string';
-import {JweJwtAccessTokenStrategy} from '../../token/jwe-jwt-access-token.strategy';
-import {JweJwtRefreshTokenStrategy} from '../../token/jwe-jwt-refresh-token.strategy';
+import {
+  AUTH,
+  change_password,
+  forget_password_otp_send,
+  LOGOUT_ALL,
+  REFRESH_TOKEN,
+  resend_otp,
+  SIGNIN,
+  SIGNUP,
+  verification_otp
+} from '../utils/string';
+import {JweJwtAccessTokenStrategy} from '../../token/strategy/jwe-jwt-access-token.strategy';
+import {JweJwtRefreshTokenStrategy} from '../../token/strategy/jwe-jwt-refresh-token.strategy';
 import {TrackLastActivityInterceptor} from '../Interceptor/trackLastActivityInterceptor.interceptor';
+import {LogoutService} from '../services/logout.service';
 
 @ApiTags('Auth')
 @Controller(AUTH)
-@UseInterceptors(TrackLastActivityInterceptor)// to track user last uses time based on token
+@UseInterceptors(TrackLastActivityInterceptor) // to track user last uses time based on token
 export class AuthController {
   constructor(
     @Inject(AuthService)
     private readonly authService: AuthService,
+    private readonly logoutService: LogoutService
   ) {}
 
   @HttpCode(HttpStatus.CREATED)
@@ -212,5 +223,23 @@ export class AuthController {
   })
   async facebookAuthRedirect(@Req() req) {
     return await this.authService.oAuthSignin(req.user);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JweJwtAccessTokenStrategy) // Ensure the user is authenticated
+  @Post(LOGOUT_ALL)
+  @ApiOperation({summary: 'Logout user from all devices'})
+  @ApiOkResponse({description: 'User logged out successfully'})
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access'
+  })
+  async logout(@Req() req: Request): Promise<{success: boolean; message: string}> {
+    const userId = (req.user as {id: number}).id;
+    const message = await this.logoutService.logoutFromAllDevices(userId);
+    return {
+      success: true,
+      message: message
+    };
   }
 }

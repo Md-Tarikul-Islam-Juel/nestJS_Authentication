@@ -13,6 +13,7 @@ CREATE TABLE "users" (
     "failedOtpAttempts" INTEGER NOT NULL DEFAULT 0,
     "accountLockedUntil" TIMESTAMP(3),
     "lastActivityAt" TIMESTAMP(3),
+    "logoutPin" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

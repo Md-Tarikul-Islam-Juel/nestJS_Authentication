@@ -28,6 +28,7 @@ export interface TokenPayloadInterface {
   lastName: string;
   verified: boolean;
   isForgetPassword: boolean;
+  TokenPayloadInterface: string;
 }
 
 export interface TokenConfig {

@@ -27,6 +27,8 @@ model User {
 
   lastActivityAt DateTime? // to track last active time of a user
 
+  logoutPin String // Store the 6-digit logout PIN
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -3,7 +3,7 @@ import { UserService } from './services/user.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { LoggerModule } from '../logger/logger.module';
 import { JwtConfigModule } from '../token/jwe-jwt.module';
-import { JweJwtAccessTokenStrategy } from '../token/jwe-jwt-access-token.strategy';
+import { JweJwtAccessTokenStrategy } from '../token/strategy/jwe-jwt-access-token.strategy';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserResolver } from './resolver/user.resolver';

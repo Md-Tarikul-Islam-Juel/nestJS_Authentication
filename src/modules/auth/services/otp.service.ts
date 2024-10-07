@@ -1,9 +1,9 @@
 import {Injectable, InternalServerErrorException, UnauthorizedException} from '@nestjs/common';
-import * as otpGenerator from 'otp-generator';
 import {LoggerService} from '../../logger/logger.service';
 import {RedisService} from '../../redis/services/redis.service';
 import {PrismaService} from '../../prisma/prisma.service';
 import {ConfigService} from '@nestjs/config';
+import {CommonAuthService} from './commonAuth.service';
 
 @Injectable()
 export class OtpService {
@@ -14,27 +14,12 @@ export class OtpService {
     private readonly redisService: RedisService,
     private readonly prismaService: PrismaService,
     private readonly logger: LoggerService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly commonAuthService: CommonAuthService
   ) {
     // Initialize values from the .env file
     this.maxFailedAttempts = this.configService.get<number>('authConfig.otp.otpMaxFailedAttempts');
     this.lockoutTime = this.configService.get<number>('authConfig.otp.otpLockoutTime');
-  }
-
-  /**
-   * Generate a one-time password (OTP)
-   * @param length - length of the OTP to generate
-   * @returns generated OTP string
-   */
-  generateOtp(length: number): string {
-    return otpGenerator.generate(length, {
-      digits: true,
-      upperCase: false,
-      lowercase: false,
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false
-    });
   }
 
   // Store OTP in Redis with TTL and throttle requests

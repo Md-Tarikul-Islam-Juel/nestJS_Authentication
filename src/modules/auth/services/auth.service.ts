@@ -140,7 +140,7 @@ export class AuthService {
     // Step 2: If MFA is enabled, send an OTP
     if (existingUser.mfaEnabled) {
       // Assuming you have mfaEnabled field in the user model
-      const otp = this.otpService.generateOtp(6);
+      const otp = this.commonAuthService.generateOtp(6);
       const otpExpireTime = this.otpExpireTime || 5; // Set default OTP expiration to 5 minutes
       await this.otpService.storeOtp(existingUser.email, otp, otpExpireTime);
 
@@ -311,7 +311,7 @@ export class AuthService {
       throw new BadRequestException({message: otpEmailSendFail});
     }
 
-    const otp: string = this.otpService.generateOtp(6); // Generate a 6-digit OTP
+    const otp: string = this.commonAuthService.generateOtp(6); // Generate a 6-digit OTP
     await this.otpService.storeOtp(email, otp, this.otpExpireTime); // Store the generated OTP in the database
     await this.emailService.sendOtpEmail(email, otp, this.otpExpireTime); // Send the OTP to the user's email
 

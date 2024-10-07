@@ -5,8 +5,8 @@ import {AuthController} from './controllers/auth.controller';
 import {LoggerModule} from '../logger/logger.module';
 import {AuthService} from './services/auth.service';
 import {JwtConfigModule} from '../token/jwe-jwt.module';
-import {JweJwtAccessTokenStrategy} from '../token/jwe-jwt-access-token.strategy';
-import {JweJwtRefreshTokenStrategy} from '../token/jwe-jwt-refresh-token.strategy';
+import {JweJwtAccessTokenStrategy} from '../token/strategy/jwe-jwt-access-token.strategy';
+import {JweJwtRefreshTokenStrategy} from '../token/strategy/jwe-jwt-refresh-token.strategy';
 import {GoogleStrategy} from './strategys/google.strategy';
 import {FacebookStrategy} from './strategys/facebook.strategy';
 import {UserService} from './services/user.service';
@@ -25,6 +25,8 @@ import {LastActivityTrackService} from './services/lastActivityTrack.service';
 import {ScheduleModule} from '@nestjs/schedule';
 import {TrackLastActivityInterceptor} from './Interceptor/trackLastActivityInterceptor.interceptor';
 import {APP_INTERCEPTOR} from '@nestjs/core';
+import {LogoutService} from './services/logout.service';
+import {LogoutTokenValidateService} from '../token/service/logoutTokenValidateService.service';
 
 @Module({
   imports: [
@@ -67,6 +69,8 @@ import {APP_INTERCEPTOR} from '@nestjs/core';
     LoggerService,
     IsNotBlockedPassword,
     LastActivityTrackService,
+    LogoutService,
+    LogoutTokenValidateService,
     {
       provide: APP_INTERCEPTOR,
       useClass: TrackLastActivityInterceptor

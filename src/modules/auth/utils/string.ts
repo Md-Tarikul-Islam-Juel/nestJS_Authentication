@@ -9,6 +9,7 @@ export const verification_otp = 'verify';
 export const forget_password_otp_send = 'forget-password';
 export const change_password = 'change-password';
 export const REFRESH_TOKEN = 'refresh-token';
+export const LOGOUT_ALL= 'logout-all';
 
 //---------------------------------------------------------------
 //---------------------------------------------------------------
