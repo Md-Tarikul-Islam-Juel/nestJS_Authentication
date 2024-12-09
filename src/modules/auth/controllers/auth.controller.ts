@@ -77,6 +77,7 @@ export class AuthController {
     type: SigninUserUnverifiedResponseDto
   })
   async signin(@Body() signinData: SigninDto): Promise<SigninSuccessResponseDto | SigninUnauthorizedResponseDto | SigninUserUnverifiedResponseDto> {
+    console.log(signinData);
     return await this.authService.signin(signinData);
   }
 
@@ -129,7 +130,7 @@ export class AuthController {
   })
   async forgetPassword(
     @Body()
-    ForgetPasswordSendEmailForOTPData: ForgetPasswordDto
+      ForgetPasswordSendEmailForOTPData: ForgetPasswordDto
   ): Promise<ForgetPasswordSuccessResponseDto | ForgetPasswordErrorResponseDto> {
     return await this.authService.forgetPassword(ForgetPasswordSendEmailForOTPData);
   }

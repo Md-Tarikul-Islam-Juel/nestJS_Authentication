@@ -54,6 +54,7 @@ import {CommonAuthService} from './commonAuth.service';
 import {PasswordService} from './password.service';
 import {ExistingUserInterface, CreatedUserInterface, TokenPayloadInterface, TokenConfig} from '../interfaces/auth.interface';
 import {LastActivityTrackService} from './lastActivityTrack.service';
+import {LoginSource} from '../enum/auth.enum';
 
 @Injectable()
 export class AuthService {
@@ -99,7 +100,7 @@ export class AuthService {
     }
 
     const hashedPassword: string = await bcrypt.hash(signupData.password, this.saltRounds);
-    const CreatedUser: CreatedUserInterface = await this.userService.createUser(signupData, hashedPassword, 'default', false); //parameter(signupData, hashedPassword, loginSource, verified)
+    const CreatedUser: CreatedUserInterface = await this.userService.createUser(signupData, hashedPassword, LoginSource.DEFAULT, false); //parameter(signupData, hashedPassword, loginSource, verified)
 
     await this.sendOtp(CreatedUser.email);
 
@@ -118,7 +119,13 @@ export class AuthService {
     return {
       success: true,
       message: `${signupSuccessful} and please ${verifyYourUser}`,
-      data: {user: sanitizedUserDataForResponse}
+      data: {
+        user: sanitizedUserDataForResponse,
+        otp: {
+          timeout: this.otpExpireTime,
+          unit: 'mins'
+        }
+      }
     };
   }
 
@@ -178,7 +185,7 @@ export class AuthService {
     let existingUser: ExistingUserInterface = await this.userService.findUserByEmail(oAuthSigninData.email);
     if (!existingUser) {
       const hashedPassword: string = await bcrypt.hash(this.passwordService.randomPasswordGenerator(10), this.saltRounds);
-      existingUser = await this.userService.createUser(oAuthSigninData, hashedPassword, oAuthSigninData.loginSource, true); //parameter(signupData, hashedPassword, loginSource, verified)
+      existingUser = await this.userService.createUser(oAuthSigninData, hashedPassword, oAuthSigninData.loginSource as LoginSource, true); //parameter(signupData, hashedPassword, loginSource, verified)
     }
 
     // Remove sensitive fields from the user data
@@ -254,7 +261,10 @@ export class AuthService {
       },
       otpEmailSendFail
     );
-    await this.userService.updateForgotPasswordStatus(existingUser.email, true);
+    const updatedData = await this.userService.updateForgotPasswordStatus(existingUser.email, true);
+    if (updatedData.isForgetPassword == false) {
+      throw new BadRequestException({message: otpEmailSendFail});
+    }
     return this.sendOtp(existingUser.email);
   }
 
@@ -317,7 +327,11 @@ export class AuthService {
 
     return {
       success: true,
-      message: otpEmailSend
+      message: otpEmailSend,
+      data: {
+        timeout: this.otpExpireTime,
+        unit: 'mins'
+      }
     };
   }
 
@@ -348,10 +362,13 @@ export class AuthService {
   }
 
   public async updatePassword(user: ExistingUserInterface, newPassword: string): Promise<void> {
+    console.log('============================================');
     const hashedPassword = await this.passwordService.hashPassword(newPassword, this.saltRounds);
-    this.prisma.user.update({
+    const xyz = await this.prisma.user.update({
       where: {id: user.id},
       data: {password: hashedPassword, isForgetPassword: false}
     });
+
+    console.log(xyz);
   }
 }

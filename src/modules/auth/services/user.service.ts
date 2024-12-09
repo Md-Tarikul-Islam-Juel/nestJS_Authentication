@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import {LoggerService} from '../../logger/logger.service';
 import {CommonAuthService} from './commonAuth.service';
 import {ExistingUserInterface} from '../interfaces/auth.interface';
+import {LoginSource} from '../enum/auth.enum';
 
 @Injectable()
 export class UserService {
@@ -21,7 +22,7 @@ export class UserService {
     });
   }
 
-  async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: string, verified: boolean): Promise<ExistingUserInterface> {
+  async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: LoginSource, verified: boolean): Promise<ExistingUserInterface> {
     return this.prisma.user.upsert({
       where: {email: userData.email},
       update: {
@@ -58,8 +59,8 @@ export class UserService {
     });
   }
 
-  async updateForgotPasswordStatus(email: string, boolValue: boolean): Promise<void> {
-    this.prisma.user.update({
+  async updateForgotPasswordStatus(email: string, boolValue: boolean) {
+    return this.prisma.user.update({
       where: {email},
       data: {isForgetPassword: boolValue}
     });
@@ -120,7 +121,7 @@ export class UserService {
       // this block for Forget password.service.ts
       // ================================
       return;
-    } else if (req.user.isForgetPassword === false && existingUser.isForgetPassword === false && existingUser.verified === true) {
+    } else {
       // ================================
       // this block for change password.service.ts
       // ================================

@@ -110,6 +110,7 @@ export class ChangePasswordDto {
   })
   @IsString()
   @IsOptional()
+  @PasswordValidation()
   oldPassword?: string;
 
   @ApiProperty({
@@ -118,5 +119,6 @@ export class ChangePasswordDto {
   })
   @IsString()
   @IsNotEmpty({message: 'New password.service.ts is required'})
+  @PasswordValidation()
   newPassword: string;
 }

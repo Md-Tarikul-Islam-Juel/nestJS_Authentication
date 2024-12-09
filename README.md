@@ -37,6 +37,7 @@ sign-in, email OTP verification, password recovery, and more.
 
 - **Framework:** [NestJS](https://nestjs.com/)
 - **Database:** [PostgreSQL](https://www.postgresql.org/)
+- **Cache:** [Redis](https://redis.io/) - For efficient caching to improve application performance.
 - **ORM:** [Prisma](https://www.prisma.io)
 - **DTO Validation:** [class-validator](https://github.com/typestack/class-validator)
 - **Token Management:**  JWT(JWS + JWE). Implemented [JWS](https://tools.ietf.org/html/rfc7515)

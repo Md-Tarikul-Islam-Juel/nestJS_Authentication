@@ -1,37 +1,62 @@
 import {ApiProperty} from '@nestjs/swagger';
 import {BaseResponseDto, Tokens, UserData} from './auth.base.dto';
-import {IsEmail, IsNotEmpty, IsString} from 'class-validator';
+import {IsEmail, IsNotEmpty, IsNumber, IsString} from 'class-validator';
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------
 // =================================================================
-export class SignupSuccessResponseDto extends BaseResponseDto {
-  @ApiProperty({description: 'Data of the signed-up user', type: () => UserData})
-  data: {user: UserData};
+export class OtpInfoDto {
+  @ApiProperty({ description: 'Timeout value for OTP', example: 5 })
+  @IsNumber()
+  timeout: number;
+
+  @ApiProperty({ description: 'Unit of time for OTP timeout', example: 'mins' })
+  @IsString()
+  unit: string;
 }
 
-export class SignupUserAlreadyExistResponseDto extends BaseResponseDto {
-  @ApiProperty({description: 'Message indicating the reason for failure', example: 'User already exists'})
-  message: string = 'User already exists';
-}
-
+// Define SignupResponseUserDto next
 export class SignupResponseUserDto {
+  @ApiProperty({ description: 'User ID' })
   @IsNotEmpty()
   id: number;
 
+  @ApiProperty({ description: 'User email address' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
+  @ApiProperty({ description: 'User first name' })
   @IsString()
   @IsNotEmpty()
   firstName: string;
 
+  @ApiProperty({ description: 'User last name' })
   @IsString()
   @IsNotEmpty()
   lastName: string;
 }
 
+// Define SignupResponseDataDto before SignupSuccessResponseDto
+export class SignupResponseDataDto {
+  @ApiProperty({ description: 'User data', type: () => SignupResponseUserDto })
+  user: SignupResponseUserDto;
+
+  @ApiProperty({ description: 'OTP information for verification', type: () => OtpInfoDto })
+  otp: OtpInfoDto;
+}
+
+// Now define SignupSuccessResponseDto with reference to SignupResponseDataDto
+export class SignupSuccessResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Data of the signed-up user and OTP information', type: () => SignupResponseDataDto })
+  data: SignupResponseDataDto;
+}
+
+// Define the SignupUserAlreadyExistResponseDto at the end
+export class SignupUserAlreadyExistResponseDto extends BaseResponseDto {
+  @ApiProperty({ description: 'Message indicating the reason for failure', example: 'User already exists' })
+  message: string = 'User already exists';
+}
 // =================================================================
 //----------------------------SIGN IN-------------------------------
 // =================================================================
@@ -102,6 +127,12 @@ export class ResendSuccessResponseDto extends BaseResponseDto {
     example: 'OTP email sent'
   })
   message: string = 'OTP email sent';
+
+  @ApiProperty({
+    description: 'Additional data including OTP timeout information',
+    example: {timeout: 5, unit: 'mins/secs'}
+  })
+  data: {timeout: number; unit: string};
 }
 
 export class ResendErrorResponseDto extends BaseResponseDto {
@@ -115,12 +146,26 @@ export class ResendErrorResponseDto extends BaseResponseDto {
 // =================================================================
 //------------------------FORGET PASSWORD---------------------------
 // =================================================================
+// export class ForgetPasswordSuccessResponseDto extends BaseResponseDto {
+//   @ApiProperty({
+//     description: 'Message indicating the result of the OTP email sending process',
+//     example: 'OTP email sent'
+//   })
+//   message: string = 'OTP email sent';
+// }
+
 export class ForgetPasswordSuccessResponseDto extends BaseResponseDto {
   @ApiProperty({
     description: 'Message indicating the result of the OTP email sending process',
     example: 'OTP email sent'
   })
   message: string = 'OTP email sent';
+
+  @ApiProperty({
+    description: 'Additional data including OTP timeout information',
+    example: {timeout: 5, unit: 'mins/secs'}
+  })
+  data: {timeout: number; unit: string};
 }
 
 export class ForgetPasswordErrorResponseDto extends BaseResponseDto {
