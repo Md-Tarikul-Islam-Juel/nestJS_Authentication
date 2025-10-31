@@ -1,9 +1,9 @@
-import {Injectable, ExecutionContext, UnauthorizedException} from '@nestjs/common';
-import {AuthGuard} from '@nestjs/passport';
-import {JwtService} from '@nestjs/jwt';
+import {ExecutionContext, Injectable, UnauthorizedException} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
+import {JwtService} from '@nestjs/jwt';
+import {AuthGuard} from '@nestjs/passport';
 import * as jose from 'jose';
-import {LoggerService} from '../../logger/logger.service';
+import {LoggerService} from '../../../common/observability/logger.service';
 import {LogoutTokenValidateService} from '../service/logoutTokenValidateService.service';
 
 @Injectable()

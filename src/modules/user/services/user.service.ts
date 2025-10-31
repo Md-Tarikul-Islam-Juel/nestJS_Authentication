@@ -1,22 +1,21 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateUserInput } from '../dto/user.input';
+import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
+import {PrismaService} from '../../../platform/prisma/prisma.service';
+import {UpdateUserInput} from '../dto/user.input';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findOneById(id: number) {
     try {
       const user = await this.prisma.user.findUnique({
-        where: { id },
+        where: {id},
         select: {
           id: true,
           email: true,
           firstName: true,
-          lastName: true,
-        },
+          lastName: true
+        }
       });
 
       if (!user) {
@@ -32,8 +31,8 @@ export class UserService {
   async updateOneById(id: number, data: UpdateUserInput) {
     try {
       return await this.prisma.user.update({
-        where: { id },
-        data,
+        where: {id},
+        data
       });
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);

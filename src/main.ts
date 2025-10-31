@@ -1,49 +1,40 @@
+import {ConfigService} from '@nestjs/config';
 import {NestFactory} from '@nestjs/core';
-import {rateLimit} from 'express-rate-limit';
-import {AppModule} from './app.module';
-import {AllExceptionsFilter} from './modules/filter/all-exceptions.filter';
-import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-import {LoggerService} from './modules/logger/logger.service';
-
-const limiter = rateLimit({
-  //from per ip we allow max 5/min
-  windowMs: 1000 * 60, // 1 minutes
-  limit: 50, // Maximum 50 requests per IP in 1 minutes
-  message: 'Too many requests, please try again later.'
-});
+import {AppModule} from './app.module';
+import {GlobalValidationPipe} from './common/http/pipes/validation.pipe';
+import {LoggerService} from './common/observability/logger.service';
+import {corsOptions} from './common/security/cors';
+import {helmetConfig} from './common/security/helmet';
+import {rateLimiterConfig} from './common/security/rate-limiter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {abortOnError: false});
 
-  // Enable CORS
-  app.enableCors({
-    origin: ['http://localhost:3000', 'http://your-web-app.com', 'http://your-mobile-app.com'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true
-  });
-
+  const configService = app.get(ConfigService);
   const logger = app.get(LoggerService);
 
-  app.useGlobalFilters(new AllExceptionsFilter(logger));
-  app.use('/auth', limiter); // Apply rate limiting to authentication(/auth) route
+  app.enableCors(corsOptions);
+  app.use(helmetConfig);
+  app.use('/auth', rateLimiterConfig);
 
-  //validate all incoming packets based on all DTOs
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true
-      // disableErrorMessages:true
-      // transform: true,
-    })
-  );
+  app.useGlobalPipes(GlobalValidationPipe);
 
-  //Swagger configuration
-  const config = new DocumentBuilder().setTitle('Authentication Boilerplate').setDescription('').setVersion('1.0').addTag('').build();
+  const config = new DocumentBuilder()
+    .setTitle('Authentication Boilerplate')
+    .setDescription('NestJS Authentication API with Clean Architecture')
+    .setVersion('1.0')
+    .addTag('auth')
+    .addTag('users')
+    .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  const port = configService.get('PORT') || 3000;
+  await app.listen(port);
+  logger.info({
+    message: `Application is running on: http://localhost:${port}`
+  });
 }
 
 bootstrap();

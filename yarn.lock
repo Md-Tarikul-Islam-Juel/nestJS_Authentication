@@ -1665,6 +1665,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/helmet@^0.0.48":
+  version "0.0.48"
+  resolved "https://registry.npmjs.org/@types/helmet/-/helmet-0.0.48.tgz"
+  integrity sha512-C7MpnvSDrunS1q2Oy1VWCY7CDWHozqSnM8P4tFeRTuzwqni+PYOjEredwcqWG+kLpYcgLsgcY3orHB54gbx2Jw==
+  dependencies:
+    "@types/express" "*"
+
 "@types/http-errors@*":
   version "2.0.1"
   resolved "https://registry.npmjs.org/@types/http-errors/-/http-errors-2.0.1.tgz"
@@ -4460,6 +4467,11 @@ fs.realpath@^1.0.0:
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
 
+fsevents@^2.3.2, fsevents@~2.3.2:
+  version "2.3.3"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
+  integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
+
 ftp@^0.3.10:
   version "0.3.10"
   resolved "https://registry.npmjs.org/ftp/-/ftp-0.3.10.tgz"
@@ -4802,6 +4814,11 @@ he@^1.2.0, he@1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/he/-/he-1.2.0.tgz"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
+
+helmet@^8.1.0:
+  version "8.1.0"
+  resolved "https://registry.npmjs.org/helmet/-/helmet-8.1.0.tgz"
+  integrity sha512-jOiHyAZsmnr8LqoPGmCjYAaiuWwjAPLgY8ZX2XrmHawt99/u1y6RgrZMTeoPfpUbV96HOalYgz1qzkRbw54Pmg==
 
 help-me@^3.0.0:
   version "3.0.0"

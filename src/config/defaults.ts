@@ -1,0 +1,15 @@
+export const DEFAULT_PAGINATION = {
+  PAGE: 1,
+  LIMIT: 20,
+  MAX_LIMIT: 100
+};
+
+export const DEFAULT_TIMEOUTS = {
+  HTTP_REQUEST: 30000,
+  DATABASE_QUERY: 10000
+};
+
+export const DEFAULT_RATE_LIMITS = {
+  WINDOW_MS: 60000,
+  MAX_REQUESTS: 100
+};
