@@ -1,0 +1,89 @@
+# Cursor Repository Rules
+
+These rules make Cursor follow your project's guidelines in `guideline/` for all AI actions (code edits, commits, refactors, docs). When in doubt, prefer the canonical documents.
+
+Primary sources (must be respected):
+
+- guideline/ARCHITECTURE_PRINCIPLES.md
+- guideline/PROJECT_STRUCTURE.md
+- guideline/NAMING_CONVENTIONS.md
+- guideline/REST_API_STANDARDS.md
+- guideline/SECURITY_COMPLIANCE.md
+- guideline/ERROR_HANDLING.md
+- guideline/TESTING.md
+- guideline/DATABASE_STANDARDS.md
+
+General enforcement
+
+- Always open and consult the relevant guideline before making changes touching that area.
+- Do not contradict the guideline documents. If a trade-off is required, prefer guideline consistency over convenience.
+- Preserve existing code style in each file; do not reformat unrelated code.
+- Keep changes minimal and localized; avoid drive-by refactors.
+
+Architecture and structure
+
+- Follow module boundaries and dependency rules in PROJECT_STRUCTURE.md and ARCHITECTURE_PRINCIPLES.md.
+- Place new files in the directories prescribed by PROJECT_STRUCTURE.md; avoid ad-hoc folders.
+- For NestJS: prefer feature-modules under `src/modules/`; keep providers/controllers grouped by feature.
+
+Naming conventions
+
+- Obey NAMING_CONVENTIONS.md strictly: descriptive, full-word names; no 1–2 char identifiers.
+- Exported APIs and public types must have explicit, clear names. Avoid abbreviations.
+
+Error handling
+
+- Follow ERROR_HANDLING.md: no silent catches; meaningful handling or rethrow with context.
+- Use centralized filters/interceptors when specified; avoid scattering error formatting.
+
+REST and GraphQL
+
+- For REST endpoints: adhere to REST_API_STANDARDS.md for routes, verbs, status codes, and pagination.
+- Use DTOs for request/response shapes as defined in guidelines; validate inputs.
+- Keep Swagger/OpenAPI annotations up-to-date when adding or changing endpoints.
+
+Security
+
+- Enforce SECURITY_COMPLIANCE.md: input validation, auth, RBAC, secrets handling, and logging hygiene.
+- Never log sensitive data (tokens, passwords, PII). Redact where necessary.
+- Use existing token/strategy modules; do not reimplement crypto.
+
+Testing
+
+- Follow TESTING.md: add/maintain tests for new logic; prefer unit tests near modules.
+- Ensure deterministic tests and clear naming; no reliance on external state unless specified.
+
+Database/Prisma
+
+- Respect DATABASE_STANDARDS.md: naming, migrations, relations, and indexes.
+- Do not change schema without a migration. Review for backward-compatibility and data safety.
+
+Code style and quality
+
+- TypeScript: explicit types for exported/public APIs; avoid `any` and unsafe casts.
+- Control flow: prefer guard clauses over deep nesting.
+- Comments only for non-obvious rationale and edge cases; avoid obvious comments.
+- Keep lines reasonably wrapped; match existing formatting in each file.
+
+Operational constraints for AI edits
+
+- Do not introduce linter/type errors. If introduced, fix before finishing.
+- Do not add unrelated dependencies. If a dependency is necessary, justify in the PR/message and update lockfiles.
+- Avoid large sweeping changes. Group related edits into small, reviewable chunks.
+
+When rules conflict
+
+- Precedence: SECURITY_COMPLIANCE.md > ERROR_HANDLING.md > ARCHITECTURE_PRINCIPLES.md > PROJECT_STRUCTURE.md > NAMING_CONVENTIONS.md > REST_API_STANDARDS.md > TESTING.md > DATABASE_STANDARDS.md.
+- If a rule is ambiguous, follow the most conservative/secure interpretation and leave a brief rationale in the PR/commit message.
+
+Repository specifics (NestJS_Authentication)
+
+- Use existing services and modules under `src/modules/auth`, `src/modules/token`, `src/modules/prisma`, `src/modules/redis`, `src/modules/user`.
+- For tokens/auth, reuse strategies in `src/modules/token/strategy` and configs; never duplicate logic.
+- For validation, use DTOs and validators already present; extend them rather than bypassing.
+
+How to apply these rules during edits
+
+- Before coding: identify which guideline sections apply and verify placement/naming.
+- During coding: keep scope tight, write clear names, validate inputs, handle errors centrally.
+- After coding: run lints, ensure tests or add tests, update Swagger/GraphQL schema docs as needed.
