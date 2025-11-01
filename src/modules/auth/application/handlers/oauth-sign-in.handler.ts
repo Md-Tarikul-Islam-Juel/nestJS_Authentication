@@ -58,6 +58,13 @@ export class OAuthSignInHandler {
       );
     }
 
+    // Generate and update logoutPin for token validation
+    const newLogoutPin = this.otpDomainService.generateOtp(6);
+    await this.userService.updateLogoutPin(existingUser.id, newLogoutPin);
+
+    // Update the user object with new logoutPin for token generation
+    (existingUser as any).logoutPin = newLogoutPin;
+
     const sanitizedUserDataForToken = this.commonAuthService.removeSensitiveData(existingUser, ['password']);
     const sanitizedUserDataForResponse = this.commonAuthService.removeSensitiveData(existingUser, [
       'password',

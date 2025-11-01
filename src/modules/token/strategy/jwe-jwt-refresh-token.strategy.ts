@@ -32,22 +32,59 @@ export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guar
       } else {
         jwtToken = token;
       }
-      await this.validateJwtToken(jwtToken, request);
+
+      try {
+        await this.validateJwtToken(jwtToken, request);
+      } catch (tokenError) {
+        this.logger.error({
+          message: 'JWT token validation failed',
+          details: {
+            error: tokenError instanceof Error ? tokenError.message : String(tokenError)
+          }
+        });
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
 
       // Validate logoutPin
       const userId = request.user.id;
+      const tokenLogoutPin = request.user.logoutPin || '';
       const logoutPinFromDb = await this.logoutTokenValidateService.getLogoutPinById(userId);
+
       if (!logoutPinFromDb) {
         this.logger.error({
-          message: `${userId} 'no logoutPinFromDb found'`
+          message: `User ${userId} has no logoutPin found`
         });
         throw new UnauthorizedException('Invalid token');
-      } else if (logoutPinFromDb !== request.user.logoutPin) {
+      }
+
+      // Validate logoutPin matches
+      if (logoutPinFromDb !== tokenLogoutPin) {
+        this.logger.error({
+          message: `LogoutPin mismatch for user ${userId}`,
+          details: {
+            tokenPinLength: tokenLogoutPin.length,
+            dbPinLength: logoutPinFromDb.length,
+            dbPinEmpty: logoutPinFromDb === '',
+            tokenPinEmpty: tokenLogoutPin === ''
+          }
+        });
         throw new UnauthorizedException('Invalid token');
       }
 
       return true;
     } catch (err) {
+      // If it's already an UnauthorizedException, re-throw it
+      if (err instanceof UnauthorizedException) {
+        throw err;
+      }
+
+      // Otherwise, log the error and throw a generic message
+      this.logger.error({
+        message: 'Refresh token validation failed',
+        details: {
+          error: err instanceof Error ? err.message : String(err)
+        }
+      });
       throw new UnauthorizedException('Invalid token');
     }
   }
@@ -67,7 +104,8 @@ export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guar
 
   private async decryptJweToken(jweToken: string): Promise<string> {
     const secret = this.configService.get<string>('tokenConfig.token.jweRefreshTokenSecretKey');
-    const {plaintext} = await jose.compactDecrypt(jweToken, Buffer.from(secret, 'utf-8'));
+    const secretKey = new TextEncoder().encode(secret);
+    const {plaintext} = await jose.compactDecrypt(jweToken, secretKey);
     return new TextDecoder().decode(plaintext);
   }
 

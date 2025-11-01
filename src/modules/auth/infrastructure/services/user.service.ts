@@ -66,40 +66,45 @@ export class UserService {
     });
   }
 
+  async updateLogoutPin(userId: number, logoutPin: string): Promise<void> {
+    await this.prisma.user.update({
+      where: {id: userId},
+      data: {logoutPin}
+    });
+  }
+
   authenticateUser(user: ExistingUserInterface, password: string): void {
     if (!user) {
-      this.logger.error({
-        message: unauthorized,
-        details: this.commonAuthService.removeSensitiveData(user, ['password'])
-      });
+      this.logger.error(unauthorized, 'UserService.authenticateUser()', undefined, this.commonAuthService.removeSensitiveData(user, ['password']));
       throw new InvalidCredentialsError();
     }
 
     const isPasswordValid = bcrypt.compareSync(password, user.password);
 
     if (!isPasswordValid) {
-      this.logger.error({
-        message: `Authentication failed. Invalid password for user ${user.email}.`,
-        details: this.commonAuthService.removeSensitiveData(user, ['password'])
-      });
+      this.logger.error(
+        `Authentication failed. Invalid password for user ${user.email}.`,
+        'UserService.authenticateUser()',
+        undefined,
+        this.commonAuthService.removeSensitiveData(user, ['password'])
+      );
       throw new InvalidCredentialsError();
     }
 
     if (!user.verified) {
-      this.logger.error({
-        message: `Authentication failed. User ${user.email} is not verified.`,
-        details: this.commonAuthService.removeSensitiveData(user, ['password'])
-      });
+      this.logger.error(
+        `Authentication failed. User ${user.email} is not verified.`,
+        'UserService.authenticateUser()',
+        undefined,
+        this.commonAuthService.removeSensitiveData(user, ['password'])
+      );
       throw new UserNotVerifiedError(user.email);
     }
   }
 
   public verifyUserExist(user: ExistingUserInterface, callback: () => void, message: string): void {
     if (!user) {
-      this.logger.error({
-        message: `${message}`,
-        details: this.commonAuthService.removeSensitiveData(user, ['password'])
-      });
+      this.logger.error(message, 'UserService.verifyUserExist()', undefined, this.commonAuthService.removeSensitiveData(user, ['password']));
       callback();
     }
   }

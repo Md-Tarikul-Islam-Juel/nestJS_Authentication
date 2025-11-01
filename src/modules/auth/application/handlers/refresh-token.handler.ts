@@ -1,6 +1,8 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
+import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
+import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
 import {TokenService} from '../../infrastructure/services/token.service';
 import {UserService} from '../../infrastructure/services/user.service';
@@ -33,7 +35,12 @@ export class RefreshTokenHandler {
     const existingUser = await this.userService.findUserByEmail(command.email);
 
     if (!existingUser) {
-      throw new HttpException(AUTH_MESSAGES.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+      throw new UserNotFoundError(command.email);
+    }
+
+    // Verify user is verified before generating new tokens
+    if (!existingUser.verified) {
+      throw new UserNotVerifiedError(command.email);
     }
 
     const sanitizedUserDataForToken = this.commonAuthService.removeSensitiveData(existingUser, ['password']);

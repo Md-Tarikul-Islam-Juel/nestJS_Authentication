@@ -31,126 +31,248 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     let response: any;
     let request: Request;
 
-    // Try to determine if it's GraphQL by attempting to create GqlArgumentsHost
-    // If it succeeds, it's a GraphQL request; if it throws, it's not
     try {
-      const gqlHost = GqlArgumentsHost.create(host);
-      const context = gqlHost.getContext();
-      response = context?.res || host.switchToHttp().getResponse();
-      request = context?.req || host.switchToHttp().getRequest();
-    } catch {
-      // Not a GraphQL request, use HTTP context directly
-      response = host.switchToHttp().getResponse();
-      request = host.switchToHttp().getRequest();
-    }
-
-    if (exception instanceof DomainError) {
-      this.handleDomainError(exception, isHttp, response, request);
-      return;
-    }
-
-    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string | object = exception instanceof HttpException ? exception.getResponse() : 'Internal Server Error';
-
-    if (typeof message === 'object') {
-      message = this.extractMessage(message);
-    }
-
-    // Enhanced error logging
-    const errorDetails: any = {
-      path: request.url,
-      method: request.method,
-      status,
-      message: typeof message === 'string' ? message : JSON.stringify(message)
-    };
-
-    // Only log request body for POST/PUT/PATCH requests and if it exists
-    if (['POST', 'PUT', 'PATCH'].includes(request.method) && request.body) {
-      // Sanitize sensitive data from body
-      const sanitizedBody = {...request.body};
-      if (sanitizedBody.password) {
-        sanitizedBody.password = '[REDACTED]';
+      // Try to determine if it's GraphQL by attempting to create GqlArgumentsHost
+      try {
+        const gqlHost = GqlArgumentsHost.create(host);
+        const context = gqlHost.getContext();
+        response = context?.res || host.switchToHttp().getResponse();
+        request = context?.req || host.switchToHttp().getRequest();
+      } catch {
+        // Not a GraphQL request, use HTTP context directly
+        response = host.switchToHttp().getResponse();
+        request = host.switchToHttp().getRequest();
       }
-      errorDetails.body = sanitizedBody;
-    }
 
-    this.logger.error(
-      {
-        message: `Status: ${status}, Message: ${message}`,
-        details: errorDetails
-      },
-      exception instanceof Error ? exception.stack : (exception as any).stack
-    );
+      // Validate response exists
+      if (!response) {
+        this.logger.error('CRITICAL: No response object available in exception filter', 'ProblemDetailsFilter.catch()', undefined, {
+          contextType,
+          isHttp
+        });
+        return;
+      }
 
-    if (exception instanceof PrismaClientInitializationError) {
-      // Database connection/configuration error
-      const errorMessage = exception.message || 'Database connection error';
-      this.logger.error({
-        message: 'Database initialization error',
-        details: {
+      // Check if headers already sent
+      if (isHttp && response.headersSent) {
+        this.logger.warn('Response headers already sent, cannot send error response', 'ProblemDetailsFilter.catch()', undefined, {
+          path: request?.url
+        } as any);
+        return;
+      }
+
+      if (exception instanceof DomainError) {
+        this.handleDomainError(exception, isHttp, response, request);
+        return;
+      }
+
+      const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+      let message: string | object = exception instanceof HttpException ? exception.getResponse() : 'Internal Server Error';
+
+      if (typeof message === 'object') {
+        message = this.extractMessage(message);
+      }
+
+      // Enhanced error logging
+      const errorDetails: any = {
+        path: request.url,
+        method: request.method,
+        status,
+        message: typeof message === 'string' ? message : JSON.stringify(message)
+      };
+
+      // Only log request body for POST/PUT/PATCH requests and if it exists
+      if (['POST', 'PUT', 'PATCH'].includes(request.method) && request.body) {
+        // Sanitize sensitive data from body
+        const sanitizedBody = {...request.body};
+        if (sanitizedBody.password) {
+          sanitizedBody.password = '[REDACTED]';
+        }
+        errorDetails.body = sanitizedBody;
+      }
+
+      this.logger.error(
+        `Status: ${status}, Message: ${message}`,
+        'ProblemDetailsFilter.catch()',
+        exception instanceof Error ? exception.stack : (exception as any).stack,
+        errorDetails
+      );
+
+      if (exception instanceof PrismaClientInitializationError) {
+        // Database connection/configuration error
+        const errorMessage = exception.message || 'Database connection error';
+        this.logger.error('Database initialization error', 'ProblemDetailsFilter.catch()', undefined, {
           error: errorMessage,
           hint: 'Please check your DATABASE_URL environment variable'
+        });
+        this.handleException(
+          isHttp,
+          response,
+          HttpStatus.SERVICE_UNAVAILABLE,
+          'Database connection error. Please check your database configuration.',
+          request
+        );
+      } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+        this.handlePrismaExceptions(exception, isHttp, response, request);
+      } else if (exception instanceof Prisma.PrismaClientValidationError) {
+        this.handleException(isHttp, response, HttpStatus.BAD_REQUEST, 'Database validation error', request);
+      } else if (exception instanceof BadRequestException) {
+        this.handleValidationException(exception, isHttp, response, request);
+      } else if (exception instanceof HttpException) {
+        this.handleHttpExceptions(exception, isHttp, response, request);
+      } else {
+        this.handleException(isHttp, response, HttpStatus.INTERNAL_SERVER_ERROR, 'Internal server error', request);
+      }
+    } catch (filterError) {
+      // Critical: If exception filter itself fails, try to send a basic response
+      this.logger.error(
+        'CRITICAL: Exception filter failed',
+        'ProblemDetailsFilter.catch()',
+        filterError instanceof Error ? filterError.stack : undefined,
+        {
+          error: filterError instanceof Error ? filterError.message : String(filterError),
+          originalException: exception instanceof Error ? exception.message : String(exception)
         }
-      });
-      this.handleException(
-        isHttp,
-        response,
-        HttpStatus.SERVICE_UNAVAILABLE,
-        'Database connection error. Please check your database configuration.',
-        request
       );
-    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
-      this.handlePrismaExceptions(exception, isHttp, response, request);
-    } else if (exception instanceof Prisma.PrismaClientValidationError) {
-      this.handleException(isHttp, response, HttpStatus.BAD_REQUEST, 'Database validation error', request);
-    } else if (exception instanceof BadRequestException) {
-      this.handleValidationException(exception, isHttp, response, request);
-    } else if (exception instanceof HttpException) {
-      this.handleHttpExceptions(exception, isHttp, response, request);
-    } else {
-      this.handleException(isHttp, response, HttpStatus.INTERNAL_SERVER_ERROR, 'Internal server error', request);
+
+      // Try to get response and send error
+      try {
+        const httpResponse = host.switchToHttp().getResponse();
+        if (httpResponse && !httpResponse.headersSent) {
+          httpResponse.status(500).json({
+            success: false,
+            message: 'An unexpected error occurred'
+          });
+        }
+      } catch (finalError) {
+        // Last resort - log and give up
+        this.logger.error(
+          'ABSOLUTE FAILURE: Cannot send any error response',
+          'ProblemDetailsFilter.catch()',
+          finalError instanceof Error ? finalError.stack : undefined,
+          {
+            error: finalError instanceof Error ? finalError.message : String(finalError)
+          }
+        );
+      }
     }
   }
 
   private handleDomainError(exception: DomainError, isHttp: boolean, response: any, request: Request): void {
     const requestId = (request as any).id || request.headers['x-request-id'] || 'unknown';
 
-    this.logger.error(
-      {
-        message: `Domain Error: ${exception.message}`,
-        details: {
-          code: exception.code,
-          statusCode: exception.statusCode,
-          path: request.url,
-          method: request.method,
-          requestId
-        }
-      },
-      exception.stack
-    );
+    this.logger.error(`Domain Error: ${exception.message}`, 'ProblemDetailsFilter.handleDomainError()', exception.stack, {
+      code: exception.code,
+      statusCode: exception.statusCode,
+      path: request.url,
+      method: request.method,
+      requestId
+    });
 
     if (isHttp) {
-      const problemDetails = {
-        type: `https://api.example.com/problems/${exception.code.toLowerCase().replace(/_/g, '-')}`,
-        title: exception.constructor.name.replace('Error', ''),
-        status: exception.statusCode,
-        detail: exception.message,
-        instance: request.url,
-        code: exception.code,
-        traceId: requestId
-      };
+      // Double-check headers haven't been sent
+      if (response.headersSent) {
+        this.logger.warn('Cannot send domain error - headers already sent', 'ProblemDetailsFilter.handleDomainError()', undefined, {
+          path: request.url
+        } as any);
+        return;
+      }
 
-      response.status(exception.statusCode).json(problemDetails);
-    } else {
-      response.status(exception.statusCode).json({
-        errors: [
-          {
-            message: exception.message,
-            code: exception.code,
-            statusCode: exception.statusCode
+      // Check if it's an auth endpoint - return BaseResponseDto format
+      const isAuthEndpoint = request.url?.includes('/auth/');
+      let errorMessage = exception.message;
+
+      // Customize message for change password endpoint
+      if (request.url?.includes('/auth/change-password')) {
+        if (exception.code === 'INVALID_CREDENTIALS') {
+          errorMessage = 'Failed to change password';
+        }
+      }
+
+      try {
+        if (isAuthEndpoint) {
+          // Return BaseResponseDto format for auth endpoints
+          const responseBody = {
+            success: false,
+            message: errorMessage
+          };
+
+          this.logger.debug('About to send auth error response', 'ProblemDetailsFilter.handleDomainError()', undefined, {
+            statusCode: exception.statusCode,
+            responseBody,
+            headersSent: response.headersSent
+          });
+
+          // CRITICAL: Ensure response is sent
+          try {
+            response.status(exception.statusCode);
+            response.setHeader('Content-Type', 'application/json');
+            response.json(responseBody);
+          } catch (jsonError) {
+            // Fallback: Try using send() method
+            this.logger.error(
+              'CRITICAL: json() failed, using fallback send()',
+              'ProblemDetailsFilter.handleDomainError()',
+              jsonError instanceof Error ? jsonError.stack : undefined,
+              {
+                error: jsonError instanceof Error ? jsonError.message : String(jsonError),
+                hasStatus: typeof response.status === 'function',
+                hasJson: typeof response.json === 'function',
+                hasSend: typeof response.send === 'function'
+              }
+            );
+
+            // Fallback to text response
+            if (typeof response.status === 'function' && typeof response.send === 'function') {
+              response.status(exception.statusCode).setHeader('Content-Type', 'application/json').send(JSON.stringify(responseBody));
+            }
           }
-        ]
-      });
+        } else {
+          // Return RFC 7807 Problem Details format for other endpoints
+          const problemDetails = {
+            type: `https://api.example.com/problems/${exception.code.toLowerCase().replace(/_/g, '-')}`,
+            title: exception.constructor.name.replace('Error', ''),
+            status: exception.statusCode,
+            detail: exception.message,
+            instance: request.url,
+            code: exception.code,
+            traceId: requestId
+          };
+
+          response.status(exception.statusCode).json(problemDetails);
+        }
+      } catch (sendError) {
+        this.logger.error({
+          message: 'CRITICAL: Failed to send domain error response',
+          details: {
+            error: sendError instanceof Error ? sendError.message : String(sendError),
+            path: request.url,
+            stack: sendError instanceof Error ? sendError.stack : undefined
+          }
+        });
+      }
+    } else {
+      // GraphQL error response
+      try {
+        if (!response.headersSent) {
+          response.status(exception.statusCode).json({
+            errors: [
+              {
+                message: exception.message,
+                code: exception.code,
+                statusCode: exception.statusCode
+              }
+            ]
+          });
+        }
+      } catch (sendError) {
+        this.logger.error({
+          message: 'Failed to send GraphQL error response',
+          details: {
+            error: sendError instanceof Error ? sendError.message : String(sendError)
+          }
+        });
+      }
     }
   }
 
@@ -212,28 +334,68 @@ export class ProblemDetailsFilter implements ExceptionFilter {
   }
 
   private handleException(isHttp: boolean, response: any, status: number, message: string, request?: Request) {
-    if (isHttp) {
-      const requestId = request ? (request as any).id || request.headers['x-request-id'] || 'unknown' : 'unknown';
+    // Validate response exists
+    if (!response) {
+      this.logger.error({
+        message: 'Cannot handle exception - no response object',
+        details: {status, message}
+      });
+      return;
+    }
 
-      // Follow RFC 7807 Problem Details format
-      const problemDetails = {
-        type: `https://api.example.com/problems/${this.getErrorTypeFromStatus(status)}`,
-        title: this.getTitleFromStatus(status),
-        status,
-        detail: message,
-        instance: request?.url || '/',
-        traceId: requestId
-      };
+    // Check if headers already sent
+    if (isHttp && response.headersSent) {
+      this.logger.warn({
+        message: 'Cannot send exception response - headers already sent',
+        details: {status, message, path: request?.url}
+      });
+      return;
+    }
 
-      response.status(status).json(problemDetails);
-    } else {
-      response.status(status).json({
-        errors: [
-          {
-            message,
-            statusCode: status
-          }
-        ]
+    try {
+      if (isHttp) {
+        const requestId = request ? (request as any).id || request.headers['x-request-id'] || 'unknown' : 'unknown';
+
+        // Check if it's an auth endpoint - return BaseResponseDto format
+        const isAuthEndpoint = request?.url?.includes('/auth/');
+
+        if (isAuthEndpoint) {
+          // Return BaseResponseDto format for auth endpoints
+          const responseBody = {
+            success: false,
+            message: message
+          };
+          response.status(status).json(responseBody);
+        } else {
+          // Follow RFC 7807 Problem Details format for other endpoints
+          const problemDetails = {
+            type: `https://api.example.com/problems/${this.getErrorTypeFromStatus(status)}`,
+            title: this.getTitleFromStatus(status),
+            status,
+            detail: message,
+            instance: request?.url || '/',
+            traceId: requestId
+          };
+          response.status(status).json(problemDetails);
+        }
+      } else {
+        response.status(status).json({
+          errors: [
+            {
+              message,
+              statusCode: status
+            }
+          ]
+        });
+      }
+    } catch (sendError) {
+      this.logger.error({
+        message: 'Failed to send exception response',
+        details: {
+          error: sendError instanceof Error ? sendError.message : String(sendError),
+          status,
+          message
+        }
       });
     }
   }

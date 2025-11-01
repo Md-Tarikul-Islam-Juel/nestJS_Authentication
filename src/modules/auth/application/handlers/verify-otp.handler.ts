@@ -2,6 +2,7 @@ import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
+import {OtpDomainService} from '../../domain/services/otp-domain.service';
 import {LastActivityTrackService} from '../../infrastructure/services/last-activity-track.service';
 import {OtpService} from '../../infrastructure/services/otp.service';
 import {TokenService} from '../../infrastructure/services/token.service';
@@ -24,6 +25,7 @@ export class VerifyOtpHandler {
     private readonly tokenService: TokenService,
     private readonly commonAuthService: CommonAuthService,
     private readonly lastActivityService: LastActivityTrackService,
+    private readonly otpDomainService: OtpDomainService,
     @Inject(UNIT_OF_WORK_PORT)
     private readonly uow: UnitOfWorkPort
   ) {
@@ -50,6 +52,13 @@ export class VerifyOtpHandler {
     });
 
     await this.otpService.deleteOtp(command.email);
+
+    // Generate and update logoutPin for token validation
+    const newLogoutPin = this.otpDomainService.generateOtp(6);
+    await this.userService.updateLogoutPin(existingUser.id, newLogoutPin);
+
+    // Update the user object with new logoutPin for token generation
+    (existingUser as any).logoutPin = newLogoutPin;
 
     const sanitizedUserDataForToken = this.commonAuthService.removeSensitiveData(existingUser, [
       'password',

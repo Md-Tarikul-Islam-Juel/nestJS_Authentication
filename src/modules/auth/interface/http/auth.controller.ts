@@ -1,4 +1,4 @@
-import {Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards, UseInterceptors} from '@nestjs/common';
+import {Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards, UseInterceptors} from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport';
 import {ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {Request} from 'express';
@@ -218,8 +218,15 @@ export class AuthController {
     description: 'Unauthorized access'
   })
   async logout(@Req() req: Request): Promise<{success: boolean; message: string}> {
-    const userId = (req.user as {id: number}).id;
+    const user = req.user as any;
+
+    if (!user || !user.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    const userId = user.id;
     const message = await this.logoutService.logoutFromAllDevices(userId);
+
     return {
       success: true,
       message: message

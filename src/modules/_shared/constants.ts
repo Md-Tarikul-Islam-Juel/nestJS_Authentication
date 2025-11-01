@@ -24,6 +24,7 @@ export const AUTH_MESSAGES = {
   FAILED_TO_CHANGE_PASSWORD: 'Failed to change password',
   PASSWORD_UPDATED: 'Your password has been updated',
   OLD_PASSWORD_REQUIRED: 'Old password is required',
+  NEW_PASSWORD_SAME_AS_OLD: 'New password must be different from the old password',
   INVALID_REFRESH_TOKEN: 'Invalid Refresh Token',
   USER_NOT_FOUND: 'User Not Found',
   FAILED_TO_SEND_OTP_EMAIL: 'Failed to send OTP email',

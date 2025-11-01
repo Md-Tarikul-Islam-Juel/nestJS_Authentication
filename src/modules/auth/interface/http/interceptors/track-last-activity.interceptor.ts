@@ -25,8 +25,12 @@ export class TrackLastActivityInterceptor implements NestInterceptor {
       }
     }
 
+    // Don't block on activity tracking - fire and forget
     if (userId) {
-      await this.lastActivityService.updateLastActivityToRedis(userId);
+      this.lastActivityService.updateLastActivityToRedis(userId).catch(error => {
+        // Silently fail - activity tracking shouldn't block requests
+        console.error('Failed to update last activity:', error);
+      });
     }
 
     return next.handle();

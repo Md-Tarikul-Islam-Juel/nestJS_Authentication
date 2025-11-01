@@ -2,6 +2,7 @@ import {ConfigService} from '@nestjs/config';
 import {NestFactory} from '@nestjs/core';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
 import {AppModule} from './app.module';
+import {ProblemDetailsFilter} from './common/http/filters/problem-details.filter';
 import {GlobalValidationPipe} from './common/http/pipes/validation.pipe';
 import {LoggerService} from './common/observability/logger.service';
 import {corsOptions} from './common/security/cors';
@@ -14,9 +15,19 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = app.get(LoggerService);
 
+  // Handle unhandled promise rejections to ensure errors don't hang
+  process.on('unhandledRejection', (reason: any) => {
+    logger.error('Unhandled Promise Rejection', 'bootstrap()', reason instanceof Error ? reason.stack : undefined, {
+      reason: reason instanceof Error ? reason.message : String(reason)
+    });
+  });
+
   app.enableCors(corsOptions);
   app.use(helmetConfig);
   app.use('/auth', rateLimiterConfig);
+
+  // Register global exception filter - MUST be before useGlobalPipes
+  app.useGlobalFilters(new ProblemDetailsFilter(logger));
 
   app.useGlobalPipes(GlobalValidationPipe);
 
@@ -32,9 +43,7 @@ async function bootstrap() {
 
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
-  logger.info({
-    message: `Application is running on: http://localhost:${port}`
-  });
+  logger.info(`Application is running on: http://localhost:${port}`, 'bootstrap()');
 }
 
 bootstrap();

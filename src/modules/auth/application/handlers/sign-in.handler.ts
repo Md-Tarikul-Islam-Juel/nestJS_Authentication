@@ -64,15 +64,20 @@ export class SignInHandler {
 
     await this.userService.updateForgotPasswordStatus(existingUser.email, false);
 
+    // Generate and update logoutPin for token validation
+    const newLogoutPin = this.otpDomainService.generateOtp(6);
+    await this.userService.updateLogoutPin(existingUser.id, newLogoutPin);
+
+    // Update the user object with new logoutPin for token generation
+    (existingUser as any).logoutPin = newLogoutPin;
+
     if (existingUser.mfaEnabled) {
       const otp = this.otpDomainService.generateOtp(6);
       const otpExpireTime = this.otpExpireTime || 5;
       await this.otpService.storeOtp(existingUser.email, otp, otpExpireTime);
       await this.emailService.sendOtpEmail(existingUser.email, otp, otpExpireTime);
 
-      this.logger.info({
-        message: `MFA enabled for user ${existingUser.email}, OTP sent.`
-      });
+      this.logger.info(`MFA enabled for user ${existingUser.email}, OTP sent.`, 'SignInHandler.execute()');
 
       return {
         success: true,
