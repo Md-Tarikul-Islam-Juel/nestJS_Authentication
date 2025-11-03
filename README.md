@@ -4,11 +4,9 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
 </p>
 
-
 ![Version](https://img.shields.io/github/v/tag/Md-Tarikul-Islam-Juel/nestJS_Authentication?label=version&color=blue)
 ![Release](https://img.shields.io/github/v/release/Md-Tarikul-Islam-Juel/nestJS_Authentication?label=release&color=blue)
 ![Issues](https://img.shields.io/github/issues/Md-Tarikul-Islam-Juel/nestJS_Authentication?color=red)
-
 
 <div align="center">
   <h1 style="font-size: 36px;"><strong>The Ultimate & Ready To Go Solution For User Management System</strong></h1>
@@ -21,7 +19,7 @@ sign-in, email OTP verification, password recovery, and more.
 ## 🚀 Key Features: Boost your project speed
 
 | Feature                         | Description                                                                                                | API Type | JWT Token Protection |
-|---------------------------------|------------------------------------------------------------------------------------------------------------|:--------:|:--------------------:|
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------- | :------: | :------------------: |
 | **Sign-Up & Login APIs**        | Streamline user onboarding with a smooth and intuitive registration and login experience.                  |   REST   |          No          |
 | **Email Verification API**      | Boost security and prevent unauthorized access through email OTP verification.                             |   REST   |          No          |
 | **OTP Resend API**              | Never let users get stuck! Offer convenient OTP resend options for seamless account activation.            |   REST   |          No          |
@@ -40,7 +38,7 @@ sign-in, email OTP verification, password recovery, and more.
 - **Cache:** [Redis](https://redis.io/) - For efficient caching to improve application performance.
 - **ORM:** [Prisma](https://www.prisma.io)
 - **DTO Validation:** [class-validator](https://github.com/typestack/class-validator)
-- **Token Management:**  JWT(JWS + JWE). Implemented [JWS](https://tools.ietf.org/html/rfc7515)
+- **Token Management:** JWT(JWS + JWE). Implemented [JWS](https://tools.ietf.org/html/rfc7515)
   and [JWE](https://tools.ietf.org/html/rfc7516) using the [jose](https://github.com/panva/jose)
   and [Passport](http://www.passportjs.org/) library.
 - **OAuth:** [Google](https://developers.google.com/identity/protocols/oauth2)
@@ -99,7 +97,7 @@ mutation UpdateUser {
         id
         email
         firstName
-        lastName 
+        lastName
     }
 }
 ```
@@ -122,36 +120,44 @@ Replace `{{url}}` with the appropriate base URL of your API.
 ## 🚴🏿 Setup Instructions:
 
 1. **Clone the Repository:**
-    - Download or clone the repository to your local machine.
+
+   - Download or clone the repository to your local machine.
 
 2. **Create Environment File:**
-    - Navigate to the root directory.
-    - Create a `.env` file based on `.env.example`.
-    - Modify the variables in `.env` according to your configuration.
+
+   - Navigate to the root directory.
+   - Create a `.env` file based on `.env.example`.
+   - Modify the variables in `.env` according to your configuration.
 
 3. **Install Dependencies:**
-    - Open your terminal.
-    - Run `yarn install` or `npm install` to install project dependencies.
+
+   - Open your terminal.
+   - Run `yarn install` or `npm install` to install project dependencies.
 
 4. **Setup Docker:**
-    - Ensure Docker is installed on your machine.
-    - Run `docker-compose -f docker-compose-dev.yml up -d` to start the PostgreSQL DB container.
+
+   - Ensure Docker is installed on your machine.
+   - Run `docker-compose -f docker-compose-dev.yml up -d` to start the PostgreSQL DB container.
 
 5. **Generate Prisma Client:**
-    - Run `npx prisma generate` to generate the Prisma client.
+
+   - Run `npx prisma generate` to generate the Prisma client.
 
 6. **Migrate Database:**
-    - Run `npx prisma migrate deploy` to apply database migrations.
+
+   - Run `npx prisma migrate deploy` to apply database migrations.
 
 7. **Import Postman Collection:**
-    - Locate `nestJs_Authentication.postman_collection.json` in `documents/postman/`.
-    - Import the collection into Postman.
+
+   - Locate `nestJs_Authentication.postman_collection.json` in `documents/postman/`.
+   - Import the collection into Postman.
 
 8. **Run the Project:**
-    - Start the project with `npm start` or `yarn start` or `yarn start:dev` in the terminal.
+
+   - Start the project with `npm start` or `yarn start` or `yarn start:dev` in the terminal.
 
 9. **Access Swagger Documentation:**
-    - Open `http://localhost:3000/api` in your web browser to view the Swagger documentation.
+   - Open `http://localhost:3000/api` in your web browser to view the Swagger documentation.
 
 ## 🌐 Environment Setup
 
@@ -212,7 +218,10 @@ OTP_LOCKOUT_TIME=5
 # JWT and JWE Secret Keys
 # JSON Web Encryption (JWE). Each key should be exactly 32 characters long,
 # ensuring they are 256 bits when properly encoded.
+# USE_JWE: Enable/disable JWE encryption. When 'true', tokens are encrypted with JWE.
+#          When 'false', plain JWT tokens are generated (default: true).
 # ======================================================
+USE_JWE=true
 JWE_ACCESS_TOKEN_SECRET=1234567890abcdef1234567890abcdef
 JWT_ACCESS_TOKEN_SECRET=abcdefghijklmnopqrstuvwxyza123456
 JWE_REFRESH_TOKEN_SECRET=abcdef1234567890abcdef1234567890
@@ -350,7 +359,6 @@ To sign in a user, send a POST request to the signin endpoint with the required 
     "lastName": "juel"
   }
 }
-
 ```
 
 **Notes:**
@@ -509,11 +517,11 @@ complete the login process.
 - **Lockout Protection**: After a set number of failed OTP attempts, the account will be temporarily locked for enhanced
   security.
 - **Environment Control**: You can configure the following settings via the `.env` file:
-    - `OTP_EXPIRE_TIME`: Time (in minutes) before the OTP expires. Default is 5 minutes.
-    - `OTP_MAX_FAILED_ATTEMPTS`: Maximum number of allowed failed OTP attempts before account lockout. Default is 5
-      attempts.
-    - `OTP_LOCKOUT_TIME`: Time (in minutes) for which the account will be locked after exceeding the maximum failed OTP
-      attempts. Default is 5 minutes.
+  - `OTP_EXPIRE_TIME`: Time (in minutes) before the OTP expires. Default is 5 minutes.
+  - `OTP_MAX_FAILED_ATTEMPTS`: Maximum number of allowed failed OTP attempts before account lockout. Default is 5
+    attempts.
+  - `OTP_LOCKOUT_TIME`: Time (in minutes) for which the account will be locked after exceeding the maximum failed OTP
+    attempts. Default is 5 minutes.
 
 MFA adds an extra layer of security by ensuring that even if a user's password is compromised, unauthorized access to
 the account is still prevented.
@@ -540,7 +548,3 @@ For any inquiries or further assistance, feel free to reach out:
   <a href="mailto:md.tarikulislamjuel@gmail.com"><img src="https://img.icons8.com/color/48/000000/gmail.png" alt="Gmail" style="margin: 0 15px;"/></a>
   <a href="https://www.linkedin.com/in/tarikulislamjuel/"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn" style="margin: 0 15px;"/></a>
 </p>
-
-
-
-

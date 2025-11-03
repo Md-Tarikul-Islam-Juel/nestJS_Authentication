@@ -1,5 +1,5 @@
-import {User as GraphQLUser} from '../../../../modules/user/dto/user.type';
 import {User} from '../../domain/entities/user.entity';
+import {User as GraphQLUser} from '../../interface/graphql/users.types';
 
 export class UserMapper {
   static toGraphQL(domainUser: User): GraphQLUser {

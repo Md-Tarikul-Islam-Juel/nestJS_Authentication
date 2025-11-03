@@ -1,6 +1,5 @@
 import {Global, Module} from '@nestjs/common';
 import {ConfigModule as NestConfigModule} from '@nestjs/config';
-import tokenConfig from '../modules/token/config/token.config';
 import authConfig from './auth.config';
 import {envSchema} from './env.schema';
 
@@ -10,7 +9,7 @@ import {envSchema} from './env.schema';
     NestConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [authConfig, tokenConfig],
+      load: [authConfig],
       validationSchema: envSchema,
       validationOptions: {
         allowUnknown: true, // Allow other env vars not in schema

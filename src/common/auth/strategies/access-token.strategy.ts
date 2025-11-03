@@ -1,16 +1,20 @@
-import {Injectable, ExecutionContext, UnauthorizedException} from '@nestjs/common';
-import {AuthGuard} from '@nestjs/passport';
-import {JwtService} from '@nestjs/jwt';
+import {ExecutionContext, Injectable, UnauthorizedException} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import * as jose from 'jose';
 import {GqlExecutionContext} from '@nestjs/graphql';
+import {JwtService} from '@nestjs/jwt';
+import {AuthGuard} from '@nestjs/passport';
+import * as jose from 'jose';
 
+/**
+ * Access Token Strategy
+ * Cross-cutting auth guard for HTTP and GraphQL
+ * Supports both plain JWT and JWE-encrypted JWT tokens
+ */
 @Injectable()
-export class JweJwtAccessTokenStrategy extends AuthGuard('jwt_accessToken_guard') {
+export class AccessTokenStrategy extends AuthGuard('jwt_accessToken_guard') {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-
+    private readonly configService: ConfigService
   ) {
     super();
   }
@@ -62,14 +66,16 @@ export class JweJwtAccessTokenStrategy extends AuthGuard('jwt_accessToken_guard'
   }
 
   private async decryptJweToken(jweToken: string): Promise<string> {
-    const secret = this.configService.get<string>('tokenConfig.token.jweAccessTokenSecretKey');
-    const {plaintext} = await jose.compactDecrypt(jweToken, Buffer.from(secret, 'utf-8'));
+    const secret = this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey');
+    const secretKey = new TextEncoder().encode(secret);
+    const {plaintext} = await jose.compactDecrypt(jweToken, secretKey);
     return new TextDecoder().decode(plaintext);
   }
 
   private async validateJwtToken(token: string, request: any) {
-    const secret = this.configService.get<string>('tokenConfig.token.jwtAccessTokenSecretKey');
+    const secret = this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey');
     const decoded = this.jwtService.verify(token, {secret});
     request.user = decoded;
   }
 }
+

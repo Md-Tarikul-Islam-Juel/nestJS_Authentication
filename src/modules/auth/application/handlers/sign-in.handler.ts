@@ -1,6 +1,7 @@
 import {Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {LoggerService} from '../../../../common/observability/logger.service';
+import {PlatformJwtService, TokenConfig} from '../../../../platform/jwt/jwt.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
@@ -10,12 +11,10 @@ import {OtpDomainService} from '../../domain/services/otp-domain.service';
 import {EmailService} from '../../infrastructure/email/email.service';
 import {LastActivityTrackService} from '../../infrastructure/services/last-activity-track.service';
 import {OtpService} from '../../infrastructure/services/otp.service';
-import {TokenService} from '../../infrastructure/services/token.service';
 import {UserService} from '../../infrastructure/services/user.service';
 import {SignInCommand} from '../commands/sign-in.command';
 import {Tokens} from '../dto/auth-base.dto';
 import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
-import {TokenConfig} from '../types/auth.types';
 
 @Injectable()
 export class SignInHandler {
@@ -27,7 +26,7 @@ export class SignInHandler {
     private readonly logger: LoggerService,
     private readonly userService: UserService,
     private readonly otpService: OtpService,
-    private readonly tokenService: TokenService,
+    private readonly jwtService: PlatformJwtService,
     private readonly emailService: EmailService,
     private readonly commonAuthService: CommonAuthService,
     private readonly otpDomainService: OtpDomainService,
@@ -35,6 +34,7 @@ export class SignInHandler {
   ) {
     this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
     this.tokenConfig = {
+      useJwe: this.configService.get<boolean>('authConfig.token.useJwe'),
       jweAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey'),
       jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey'),
       jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtAccessTokenExpireTime'),
@@ -104,7 +104,7 @@ export class SignInHandler {
       'updatedAt'
     ]);
 
-    const tokens: Tokens = await this.tokenService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
+    const tokens: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
 
     return this.buildSigninResponse(sanitizedUserDataForResponse as any, tokens, AUTH_MESSAGES.SIGNIN_SUCCESSFUL);
   }

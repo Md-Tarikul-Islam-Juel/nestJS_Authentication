@@ -3,13 +3,13 @@ import {Module} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {APP_INTERCEPTOR} from '@nestjs/core';
 import {ScheduleModule} from '@nestjs/schedule';
+import {AccessTokenStrategy} from '../../common/auth/strategies/access-token.strategy';
+import {RefreshTokenStrategy} from '../../common/auth/strategies/refresh-token.strategy';
+import {LogoutTokenValidateService} from '../../common/auth/strategies/logout-token-validate.service';
 import {LoggerModule} from '../../common/observability/logger.module';
+import {PlatformJwtModule} from '../../platform/jwt/jwt.module';
 import {PrismaModule} from '../../platform/prisma/prisma.module';
 import {RedisModule} from '../../platform/redis/redis.module';
-import {JwtConfigModule} from '../token/jwe-jwt.module';
-import {LogoutTokenValidateService} from '../token/service/logoutTokenValidateService.service';
-import {JweJwtAccessTokenStrategy} from '../token/strategy/jwe-jwt-access-token.strategy';
-import {JweJwtRefreshTokenStrategy} from '../token/strategy/jwe-jwt-refresh-token.strategy';
 import {UNIT_OF_WORK_PORT, USER_REPOSITORY_PORT} from './application/di-tokens';
 import {ChangePasswordHandler} from './application/handlers/change-password.handler';
 import {ForgetPasswordHandler} from './application/handlers/forget-password.handler';
@@ -31,7 +31,6 @@ import {UserPrismaRepository} from './infrastructure/prisma/user.prisma.reposito
 import {LastActivityTrackService} from './infrastructure/services/last-activity-track.service';
 import {LogoutService} from './infrastructure/services/logout.service';
 import {OtpService} from './infrastructure/services/otp.service';
-import {TokenService} from './infrastructure/services/token.service';
 import {UserService} from './infrastructure/services/user.service';
 import {PrismaUnitOfWork} from './infrastructure/uow/prisma.uow';
 import {AuthController} from './interface/http/auth.controller';
@@ -58,13 +57,13 @@ import {IsNotBlockedPassword} from './interface/validators/password-validator.va
     PrismaModule,
     RedisModule,
     LoggerModule,
-    JwtConfigModule
+    PlatformJwtModule
   ],
   controllers: [AuthController],
   providers: [
     // Strategies
-    JweJwtAccessTokenStrategy,
-    JweJwtRefreshTokenStrategy,
+    AccessTokenStrategy,
+    RefreshTokenStrategy,
     GoogleStrategy,
     FacebookStrategy,
     // Application Layer
@@ -97,7 +96,6 @@ import {IsNotBlockedPassword} from './interface/validators/password-validator.va
     },
     PrismaUnitOfWork,
     // Legacy services (to be refactored)
-    TokenService,
     UserService,
     OtpService,
     CommonAuthService,

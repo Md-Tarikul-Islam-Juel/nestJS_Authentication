@@ -1,15 +1,14 @@
 import {Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
+import {PlatformJwtService, TokenConfig} from '../../../../platform/jwt/jwt.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
 import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
-import {TokenService} from '../../infrastructure/services/token.service';
 import {UserService} from '../../infrastructure/services/user.service';
 import {RefreshTokenCommand} from '../commands/refresh-token.command';
 import {Tokens} from '../dto/auth-base.dto';
 import {RefreshTokenSuccessResponseDto} from '../dto/auth-response.dto';
-import {TokenConfig} from '../types/auth.types';
 
 @Injectable()
 export class RefreshTokenHandler {
@@ -18,10 +17,11 @@ export class RefreshTokenHandler {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
-    private readonly tokenService: TokenService,
+    private readonly jwtService: PlatformJwtService,
     private readonly commonAuthService: CommonAuthService
   ) {
     this.tokenConfig = {
+      useJwe: this.configService.get<boolean>('authConfig.token.useJwe'),
       jweAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey'),
       jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey'),
       jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtAccessTokenExpireTime'),
@@ -45,7 +45,7 @@ export class RefreshTokenHandler {
 
     const sanitizedUserDataForToken = this.commonAuthService.removeSensitiveData(existingUser, ['password']);
 
-    const tokens: Tokens = await this.tokenService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
+    const tokens: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
 
     return {
       success: true,

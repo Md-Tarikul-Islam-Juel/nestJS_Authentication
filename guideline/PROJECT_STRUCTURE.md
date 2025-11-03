@@ -70,6 +70,12 @@ apps/api/src/
 │  ├─ idempotency/
 │  │  ├─ key.interceptor.ts                 # Idempotency-Key enforcement for critical POST
 │  │  └─ store.port.ts                      # Idempotency store port (e.g., Redis)
+│  ├─ auth/
+│  │  ├─ strategies/                        # Cross-cutting auth guards (JWT, OAuth, etc.)
+│  │  │  ├─ access-token.strategy.ts         # Access token guard (HTTP + GraphQL)
+│  │  │  ├─ refresh-token.strategy.ts        # Refresh token guard with logout validation
+│  │  │  └─ logout-token-validate.service.ts  # Token revocation validation
+│  │  └─ guards/                            # Additional auth guards as needed
 │  ├─ authz/
 │  │  ├─ policies/                          # Policy rules (ABAC/RBAC)
 │  │  └─ policy.decorator.ts                # @Policy() decorator for controllers/resolvers
@@ -148,6 +154,9 @@ apps/api/src/
    ├─ prisma/
    │  ├─ prisma.module.ts                   # Registers Prisma + repository bindings
    │  └─ prisma.client.ts                   # Prisma Client instance
+   ├─ jwt/                                  # JWT token infrastructure
+   │  ├─ jwt.module.ts                      # JWT module configuration
+   │  └─ jwt.service.ts                     # Token generation/validation service
    ├─ redis/                                # Redis client module
    ├─ queue/                                # BullMQ / Temporal / SQS workers
    ├─ storage/                              # S3/GCS file storage adapter

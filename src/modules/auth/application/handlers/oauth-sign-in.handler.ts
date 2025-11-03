@@ -1,17 +1,16 @@
 import {Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
+import {PlatformJwtService, TokenConfig} from '../../../../platform/jwt/jwt.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {LoginSource} from '../../domain/enums/login-source.enum';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
 import {OtpDomainService} from '../../domain/services/otp-domain.service';
 import {PasswordPolicyService} from '../../domain/services/password-policy.service';
 import {LastActivityTrackService} from '../../infrastructure/services/last-activity-track.service';
-import {TokenService} from '../../infrastructure/services/token.service';
 import {UserService} from '../../infrastructure/services/user.service';
 import {OAuthSignInCommand} from '../commands/oauth-sign-in.command';
 import {Tokens} from '../dto/auth-base.dto';
 import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
-import {TokenConfig} from '../types/auth.types';
 
 @Injectable()
 export class OAuthSignInHandler {
@@ -21,7 +20,7 @@ export class OAuthSignInHandler {
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
-    private readonly tokenService: TokenService,
+    private readonly jwtService: PlatformJwtService,
     private readonly passwordService: PasswordPolicyService,
     private readonly commonAuthService: CommonAuthService,
     private readonly otpDomainService: OtpDomainService,
@@ -29,6 +28,7 @@ export class OAuthSignInHandler {
   ) {
     this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds');
     this.tokenConfig = {
+      useJwe: this.configService.get<boolean>('authConfig.token.useJwe'),
       jweAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey'),
       jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey'),
       jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtAccessTokenExpireTime'),
@@ -82,7 +82,7 @@ export class OAuthSignInHandler {
 
     await this.lastActivityService.updateLastActivityInDB(existingUser.id);
 
-    const tokens: Tokens = await this.tokenService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
+    const tokens: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
 
     return this.buildSigninResponse(sanitizedUserDataForResponse as any, tokens, AUTH_MESSAGES.SIGNIN_SUCCESSFUL);
   }

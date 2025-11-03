@@ -2,8 +2,8 @@ import {Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedExce
 import {AuthGuard} from '@nestjs/passport';
 import {ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {Request} from 'express';
-import {JweJwtAccessTokenStrategy} from '../../../../modules/token/strategy/jwe-jwt-access-token.strategy';
-import {JweJwtRefreshTokenStrategy} from '../../../../modules/token/strategy/jwe-jwt-refresh-token.strategy';
+import {AccessTokenStrategy} from '../../../../common/auth/strategies/access-token.strategy';
+import {RefreshTokenStrategy} from '../../../../common/auth/strategies/refresh-token.strategy';
 import {AUTH_ROUTES} from '../../../_shared/constants';
 import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../../application/dto/auth-request.dto';
 import {
@@ -120,7 +120,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JweJwtAccessTokenStrategy)
+  @UseGuards(AccessTokenStrategy)
   @Post(AUTH_ROUTES.CHANGE_PASSWORD)
   @ApiOperation({
     summary: 'Change user password',
@@ -151,7 +151,7 @@ export class AuthController {
     return await this.authService.changePassword(changePasswordData, req);
   }
 
-  @UseGuards(JweJwtRefreshTokenStrategy)
+  @UseGuards(RefreshTokenStrategy)
   @HttpCode(HttpStatus.OK)
   @Get(AUTH_ROUTES.REFRESH_TOKEN)
   @ApiOperation({summary: 'Refresh access token'})
@@ -209,7 +209,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JweJwtAccessTokenStrategy)
+  @UseGuards(AccessTokenStrategy)
   @Post(AUTH_ROUTES.LOGOUT_ALL)
   @ApiOperation({summary: 'Logout user from all devices'})
   @ApiOkResponse({description: 'User logged out successfully'})

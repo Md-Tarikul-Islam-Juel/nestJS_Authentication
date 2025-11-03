@@ -3,11 +3,16 @@ import {ConfigService} from '@nestjs/config';
 import {JwtService} from '@nestjs/jwt';
 import {AuthGuard} from '@nestjs/passport';
 import * as jose from 'jose';
-import {LoggerService} from '../../../common/observability/logger.service';
-import {LogoutTokenValidateService} from '../service/logoutTokenValidateService.service';
+import {LoggerService} from '../../observability/logger.service';
+import {LogoutTokenValidateService} from './logout-token-validate.service';
 
+/**
+ * Refresh Token Strategy
+ * Cross-cutting auth guard with logout pin validation
+ * Supports both plain JWT and JWE-encrypted JWT tokens
+ */
 @Injectable()
-export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guard') {
+export class RefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guard') {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -103,15 +108,16 @@ export class JweJwtRefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guar
   }
 
   private async decryptJweToken(jweToken: string): Promise<string> {
-    const secret = this.configService.get<string>('tokenConfig.token.jweRefreshTokenSecretKey');
+    const secret = this.configService.get<string>('authConfig.token.jweRefreshTokenSecretKey');
     const secretKey = new TextEncoder().encode(secret);
     const {plaintext} = await jose.compactDecrypt(jweToken, secretKey);
     return new TextDecoder().decode(plaintext);
   }
 
   private async validateJwtToken(token: string, request: any) {
-    const secret = this.configService.get<string>('tokenConfig.token.jwtRefreshTokenSecretKey');
+    const secret = this.configService.get<string>('authConfig.token.jwtRefreshTokenSecretKey');
     const decoded = this.jwtService.verify(token, {secret});
     request.user = decoded;
   }
 }
+

@@ -1,6 +1,10 @@
 import {Injectable} from '@nestjs/common';
 import {PrismaService} from '../../../platform/prisma/prisma.service';
 
+/**
+ * Logout Token Validation Service
+ * Validates logout pin for token revocation
+ */
 @Injectable()
 export class LogoutTokenValidateService {
   constructor(private readonly prisma: PrismaService) {}
@@ -14,3 +18,4 @@ export class LogoutTokenValidateService {
     return user ? user.logoutPin : null;
   }
 }
+

@@ -32,6 +32,7 @@ export interface TokenPayloadInterface {
 }
 
 export interface TokenConfig {
+  useJwe: boolean;
   jweAccessTokenSecretKey: string;
   jwtAccessTokenSecretKey: string;
   jweJwtAccessTokenExpireTime: string;

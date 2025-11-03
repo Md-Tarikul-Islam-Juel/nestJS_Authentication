@@ -4,6 +4,7 @@ export default registerAs('authConfig', () => ({
   bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) ?? 14, // default to 14 rounds
 
   token: {
+    useJwe: process.env.USE_JWE?.toLowerCase() === 'true' || process.env.USE_JWE === undefined, // default to true
     jweAccessTokenSecretKey: process.env.JWE_ACCESS_TOKEN_SECRET ?? '1234567890abcdef1234567890abcdef',
     jwtAccessTokenSecretKey: process.env.JWT_ACCESS_TOKEN_SECRET ?? 'abcdefghijklmnopqrstuvwxyza123456',
     jweJwtAccessTokenExpireTime: process.env.JWE_JWT_ACCESS_TOKEN_EXPIRATION ?? '86400s', // default to 1 day
