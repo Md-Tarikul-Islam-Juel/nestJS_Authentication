@@ -19,6 +19,7 @@ export class UserPrismaMapper {
       prismaUser.accountLockedUntil,
       prismaUser.lastActivityAt,
       prismaUser.logoutPin,
+      prismaUser.deletedAt,
       prismaUser.createdAt,
       prismaUser.updatedAt
     );
@@ -39,6 +40,7 @@ export class UserPrismaMapper {
       accountLockedUntil: domainUser.accountLockedUntil,
       lastActivityAt: domainUser.lastActivityAt,
       logoutPin: domainUser.logoutPin,
+      deletedAt: domainUser.deletedAt,
       createdAt: domainUser.createdAt,
       updatedAt: domainUser.updatedAt
     };

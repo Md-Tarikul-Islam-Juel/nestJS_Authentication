@@ -1,21 +1,21 @@
-import {Injectable} from '@nestjs/common';
-import {PrismaService} from '../../../platform/prisma/prisma.service';
+import {Inject, Injectable} from '@nestjs/common';
+import {USER_REPOSITORY_PORT} from '../../../modules/auth/application/di-tokens';
+import {UserRepositoryPort} from '../../../modules/auth/domain/repositories/user.repository.port';
 
 /**
  * Logout Token Validation Service
  * Validates logout pin for token revocation
+ * Following Clean Architecture: all database queries go through repository
  */
 @Injectable()
 export class LogoutTokenValidateService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(USER_REPOSITORY_PORT)
+    private readonly userRepository: UserRepositoryPort
+  ) {}
 
   async getLogoutPinById(userId: number): Promise<string | null> {
-    const user = await this.prisma.user.findUnique({
-      where: {id: userId},
-      select: {logoutPin: true}
-    });
-
-    return user ? user.logoutPin : null;
+    // Following Clean Architecture: all database queries go through repository
+    return this.userRepository.getLogoutPin(userId);
   }
 }
-

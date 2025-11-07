@@ -9,8 +9,12 @@ export class UserPrismaRepository implements UserRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: number): Promise<User | null> {
-    const prismaUser = await this.prisma.user.findUnique({
-      where: {id},
+    // Following DATABASE_STANDARDS.md: exclude soft-deleted rows
+    const prismaUser = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null // Soft delete: exclude deleted rows
+      },
       select: {
         id: true,
         email: true,
@@ -23,6 +27,18 @@ export class UserPrismaRepository implements UserRepositoryPort {
   }
 
   async update(user: User): Promise<User> {
+    // Following DATABASE_STANDARDS.md: only update non-deleted users
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        id: user.id,
+        deletedAt: null // Soft delete: exclude deleted rows
+      }
+    });
+
+    if (!existingUser) {
+      throw new Error('User not found or has been deleted');
+    }
+
     const prismaUser = await this.prisma.user.update({
       where: {id: user.id},
       data: {

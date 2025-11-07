@@ -1,5 +1,7 @@
 import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
+import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
+import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
 import {PlatformJwtService, TokenConfig} from '../../../../platform/jwt/jwt.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
@@ -8,13 +10,12 @@ import {LastActivityTrackService} from '../../infrastructure/services/last-activ
 import {OtpService} from '../../infrastructure/services/otp.service';
 import {UserService} from '../../infrastructure/services/user.service';
 import {VerifyOtpCommand} from '../commands/verify-otp.command';
-import {UNIT_OF_WORK_PORT} from '../di-tokens';
 import {Tokens} from '../dto/auth-base.dto';
 import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
-import {UnitOfWorkPort} from '../uow/uow.port';
+import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
 
 @Injectable()
-export class VerifyOtpHandler {
+export class VerifyOtpUseCase {
   private readonly tokenConfig: TokenConfig;
 
   constructor(
@@ -46,8 +47,13 @@ export class VerifyOtpHandler {
 
     await this.uow.withTransaction(async tx => {
       await tx.user.update({
-        where: {email: command.email},
-        data: {verified: true}
+        where: {
+          email: command.email,
+          deletedAt: null // Soft delete: only update active users
+        },
+        data: {
+          verified: true
+        }
       });
     });
 
@@ -82,21 +88,30 @@ export class VerifyOtpHandler {
     await this.lastActivityService.updateLastActivityInDB(existingUser.id);
 
     const token: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
-    return this.buildSigninResponse(sanitizedUserDataForResponse as any, token, AUTH_MESSAGES.OTP_AUTHORIZED);
+    return this.buildSigninResponse(sanitizeForMapper(sanitizedUserDataForResponse), token, AUTH_MESSAGES.OTP_AUTHORIZED);
   }
 
   private async verifyUserAndOtp(user: any, otp: string): Promise<void> {
     await this.otpService.verifyOtp(user.email, otp);
   }
 
-  private buildSigninResponse(userData: any, tokens: Tokens, message: string): SigninSuccessResponseDto {
+  private buildSigninResponse(userData: UserMapperInput, tokens: Tokens, message: string): SigninSuccessResponseDto {
     return {
       success: true,
       message,
       tokens,
       data: {
-        user: userData
+        user: UserMapper.toSignInResponse(userData)
       }
     };
   }
+}
+
+function sanitizeForMapper(user: Record<string, any>): UserMapperInput {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName
+  };
 }

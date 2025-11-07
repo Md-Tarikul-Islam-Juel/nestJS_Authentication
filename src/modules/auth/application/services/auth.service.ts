@@ -16,65 +16,65 @@ import {
   SigninSuccessResponseDto,
   SignupSuccessResponseDto
 } from '../dto/auth-response.dto';
-import {ChangePasswordHandler} from '../handlers/change-password.handler';
-import {ForgetPasswordHandler} from '../handlers/forget-password.handler';
-import {OAuthSignInHandler} from '../handlers/oauth-sign-in.handler';
-import {RefreshTokenHandler} from '../handlers/refresh-token.handler';
-import {RegisterUserHandler} from '../handlers/register-user.handler';
-import {ResendOtpHandler} from '../handlers/resend-otp.handler';
-import {SignInHandler} from '../handlers/sign-in.handler';
-import {VerifyOtpHandler} from '../handlers/verify-otp.handler';
+import {ChangePasswordUseCase} from '../use-cases/change-password.use-case';
+import {ForgetPasswordUseCase} from '../use-cases/forget-password.use-case';
+import {OAuthSignInUseCase} from '../use-cases/oauth-sign-in.use-case';
+import {RefreshTokenUseCase} from '../use-cases/refresh-token.use-case';
+import {RegisterUserUseCase} from '../use-cases/register-user.use-case';
+import {ResendOtpUseCase} from '../use-cases/resend-otp.use-case';
+import {SignInUseCase} from '../use-cases/sign-in.use-case';
+import {VerifyOtpUseCase} from '../use-cases/verify-otp.use-case';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly registerUserHandler: RegisterUserHandler,
-    private readonly signInHandler: SignInHandler,
-    private readonly verifyOtpHandler: VerifyOtpHandler,
-    private readonly resendOtpHandler: ResendOtpHandler,
-    private readonly forgetPasswordHandler: ForgetPasswordHandler,
-    private readonly changePasswordHandler: ChangePasswordHandler,
-    private readonly refreshTokenHandler: RefreshTokenHandler,
-    private readonly oAuthSignInHandler: OAuthSignInHandler
+    private readonly registerUserUseCase: RegisterUserUseCase,
+    private readonly signInUseCase: SignInUseCase,
+    private readonly verifyOtpUseCase: VerifyOtpUseCase,
+    private readonly resendOtpUseCase: ResendOtpUseCase,
+    private readonly forgetPasswordUseCase: ForgetPasswordUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly refreshTokenUseCase: RefreshTokenUseCase,
+    private readonly oAuthSignInUseCase: OAuthSignInUseCase
   ) {}
 
   async signup(signupData: SignupDto): Promise<SignupSuccessResponseDto> {
     const command = RegisterUserCommand.fromDto(signupData);
-    return this.registerUserHandler.execute(command);
+    return this.registerUserUseCase.execute(command);
   }
 
   async signin(signinData: SigninDto): Promise<SigninSuccessResponseDto> {
     const command = SignInCommand.fromDto(signinData);
-    return this.signInHandler.execute(command);
+    return this.signInUseCase.execute(command);
   }
 
   async verificationOtp(verificationData: VerificationDto): Promise<SigninSuccessResponseDto> {
     const command = VerifyOtpCommand.fromDto(verificationData);
-    return this.verifyOtpHandler.execute(command);
+    return this.verifyOtpUseCase.execute(command);
   }
 
   async resend(resendData: ResendDto): Promise<ResendSuccessResponseDto> {
     const command = ResendOtpCommand.fromDto(resendData);
-    return this.resendOtpHandler.execute(command);
+    return this.resendOtpUseCase.execute(command);
   }
 
   async forgetPassword(forgetData: ForgetPasswordDto): Promise<ForgetPasswordSuccessResponseDto> {
     const command = ForgetPasswordCommand.fromDto(forgetData);
-    return this.forgetPasswordHandler.execute(command);
+    return this.forgetPasswordUseCase.execute(command);
   }
 
   async changePassword(changePasswordData: ChangePasswordDto, req: any): Promise<ChangePasswordSuccessResponseDto> {
     const command = ChangePasswordCommand.fromDto(changePasswordData, req.user.id, req.user.email, req.user.isForgetPassword || false);
-    return this.changePasswordHandler.execute(command);
+    return this.changePasswordUseCase.execute(command);
   }
 
   async refreshToken(req: any): Promise<RefreshTokenSuccessResponseDto> {
     const command = RefreshTokenCommand.fromRequest(req.user);
-    return this.refreshTokenHandler.execute(command);
+    return this.refreshTokenUseCase.execute(command);
   }
 
   async oAuthSignin(oAuthUser: any): Promise<SigninSuccessResponseDto> {
     const command = OAuthSignInCommand.fromUser(oAuthUser);
-    return this.oAuthSignInHandler.execute(command);
+    return this.oAuthSignInUseCase.execute(command);
   }
 }

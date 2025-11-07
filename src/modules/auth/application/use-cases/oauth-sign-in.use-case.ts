@@ -11,9 +11,10 @@ import {UserService} from '../../infrastructure/services/user.service';
 import {OAuthSignInCommand} from '../commands/oauth-sign-in.command';
 import {Tokens} from '../dto/auth-base.dto';
 import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
+import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
 
 @Injectable()
-export class OAuthSignInHandler {
+export class OAuthSignInUseCase {
   private readonly saltRounds: number;
   private readonly tokenConfig: TokenConfig;
 
@@ -84,17 +85,30 @@ export class OAuthSignInHandler {
 
     const tokens: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
 
-    return this.buildSigninResponse(sanitizedUserDataForResponse as any, tokens, AUTH_MESSAGES.SIGNIN_SUCCESSFUL);
+    return this.buildSigninResponse(
+      sanitizeForMapper(sanitizedUserDataForResponse),
+      tokens,
+      AUTH_MESSAGES.SIGNIN_SUCCESSFUL
+    );
   }
 
-  private buildSigninResponse(userData: any, tokens: Tokens, message: string): SigninSuccessResponseDto {
+  private buildSigninResponse(userData: UserMapperInput, tokens: Tokens, message: string): SigninSuccessResponseDto {
     return {
       success: true,
       message,
       tokens,
       data: {
-        user: userData
+        user: UserMapper.toSignInResponse(userData)
       }
     };
   }
+}
+
+function sanitizeForMapper(user: Record<string, any>): UserMapperInput {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName
+  };
 }

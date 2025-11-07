@@ -1,6 +1,8 @@
-import {Inject, Injectable} from '@nestjs/common';
+import {Inject} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {LoggerService} from '../../../../common/observability/logger.service';
+import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
+import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {LoginSource} from '../../domain/enums/login-source.enum';
 import {EmailAlreadyExistsError} from '../../domain/errors/email-already-exists.error';
@@ -12,12 +14,9 @@ import {LastActivityTrackService} from '../../infrastructure/services/last-activ
 import {OtpService} from '../../infrastructure/services/otp.service';
 import {UserService} from '../../infrastructure/services/user.service';
 import {RegisterUserCommand} from '../commands/register-user.command';
-import {UNIT_OF_WORK_PORT} from '../di-tokens';
 import {SignupSuccessResponseDto} from '../dto/auth-response.dto';
-import {UnitOfWorkPort} from '../uow/uow.port';
-
-@Injectable()
-export class RegisterUserHandler {
+import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
+export class RegisterUserUseCase {
   private readonly saltRounds: number;
   private readonly otpExpireTime: number;
 
@@ -53,6 +52,8 @@ export class RegisterUserHandler {
 
       const hashedPassword = await this.passwordService.hashPassword(command.password, this.saltRounds);
 
+      // Use transaction with proper scoping (DATABASE_STANDARDS.md)
+      // Note: Currently using direct Prisma client in transaction; will be refactored to use repository.withTx()
       const createdUser = await this.uow.withTransaction(async tx => {
         return await tx.user.upsert({
           where: {email: command.email},
@@ -62,7 +63,8 @@ export class RegisterUserHandler {
             lastName: command.lastName,
             loginSource: LoginSource.DEFAULT,
             verified: false,
-            mfaEnabled: command.mfaEnabled || false
+            mfaEnabled: command.mfaEnabled || false,
+            deletedAt: null // Ensure user is not soft-deleted
           },
           create: {
             email: command.email,
@@ -73,7 +75,8 @@ export class RegisterUserHandler {
             verified: false,
             mfaEnabled: command.mfaEnabled || false,
             isForgetPassword: false,
-            logoutPin: ''
+            logoutPin: '',
+            deletedAt: null // Soft delete: not deleted
           }
         });
       });
@@ -96,11 +99,13 @@ export class RegisterUserHandler {
 
       await this.lastActivityService.updateLastActivityInDB(createdUser.id);
 
+      const signupResponseUser = UserMapper.toSignupResponse(sanitizedUserData as UserMapperInput);
+
       return {
         success: true,
         message: `${AUTH_MESSAGES.SIGNUP_SUCCESSFUL} and please ${AUTH_MESSAGES.VERIFY_YOUR_USER}`,
         data: {
-          user: sanitizedUserData as any,
+          user: signupResponseUser,
           otp: {
             timeout: this.otpExpireTime,
             unit: 'mins'

@@ -1,14 +1,19 @@
-import {Injectable} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {LoggerService} from '../../../../common/observability/logger.service';
-import {PrismaService} from '../../../../platform/prisma/prisma.service';
 import {RedisService} from '../../../../platform/redis/redis.service';
+import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
 import {AccountLockedError} from '../../domain/errors/account-locked.error';
 import {CacheError} from '../../domain/errors/cache-error.error';
 import {InvalidOtpError} from '../../domain/errors/invalid-otp.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
+import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
 
+/**
+ * OTP Service
+ * Following Clean Architecture: all database queries go through repository
+ */
 @Injectable()
 export class OtpService {
   private maxFailedAttempts: number;
@@ -16,7 +21,8 @@ export class OtpService {
 
   constructor(
     private readonly redisService: RedisService,
-    private readonly prismaService: PrismaService,
+    @Inject(USER_REPOSITORY_PORT)
+    private readonly userRepository: UserRepositoryPort,
     private readonly logger: LoggerService,
     private readonly configService: ConfigService,
     private readonly commonAuthService: CommonAuthService
@@ -45,7 +51,8 @@ export class OtpService {
   }
 
   async verifyOtp(email: string, otp: string): Promise<void> {
-    const user = await this.prismaService.user.findUnique({where: {email}});
+    // Following Clean Architecture: all database queries go through repository
+    const user = await this.userRepository.findByEmailString(email);
 
     if (!user) {
       throw new UserNotFoundError(email);
@@ -65,32 +72,18 @@ export class OtpService {
         const lockoutUntil = new Date();
         lockoutUntil.setMinutes(lockoutUntil.getMinutes() + this.lockoutTime);
 
-        await this.prismaService.user.update({
-          where: {email},
-          data: {
-            failedOtpAttempts: failedAttempts,
-            accountLockedUntil: lockoutUntil
-          }
-        });
+        await this.userRepository.updateOtpAttempts(user.id, failedAttempts, lockoutUntil);
 
         throw new AccountLockedError(this.lockoutTime);
       }
 
-      await this.prismaService.user.update({
-        where: {email},
-        data: {failedOtpAttempts: failedAttempts}
-      });
+      await this.userRepository.updateOtpAttempts(user.id, failedAttempts, null);
 
       throw new InvalidOtpError();
     }
 
-    await this.prismaService.user.update({
-      where: {email},
-      data: {
-        failedOtpAttempts: 0,
-        accountLockedUntil: null
-      }
-    });
+    // Reset OTP attempts on successful verification
+    await this.userRepository.updateOtpAttempts(user.id, 0, null);
   }
 
   async deleteOtp(email: string): Promise<void> {

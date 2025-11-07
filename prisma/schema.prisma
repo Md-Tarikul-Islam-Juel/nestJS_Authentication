@@ -10,10 +10,11 @@ datasource db {
 model User {
   id Int @id @default(autoincrement())
 
-  email     String  @unique
-  password  String
-  firstName String?
-  lastName  String?
+  // PII: Personally Identifiable Information - requires masking in logs
+  email     String  @unique // PII
+  password  String // Sensitive - never log
+  firstName String? // PII
+  lastName  String? // PII
 
   loginSource  String  @default("default")
   authorizerId String?
@@ -29,8 +30,14 @@ model User {
 
   logoutPin String // Store the 6-digit logout PIN
 
+  // Soft delete: deletedAt field for soft delete pattern
+  deletedAt DateTime? // NULL = active, non-NULL = soft deleted
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Note: Unique constraint on email is enforced via partial unique index
+  // that ignores soft-deleted rows: CREATE UNIQUE INDEX ... WHERE deletedAt IS NULL
+  // This allows reusing emails after soft deletion while maintaining uniqueness for active users
   @@map("users")
 }

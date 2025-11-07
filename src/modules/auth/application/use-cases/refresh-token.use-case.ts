@@ -11,7 +11,7 @@ import {Tokens} from '../dto/auth-base.dto';
 import {RefreshTokenSuccessResponseDto} from '../dto/auth-response.dto';
 
 @Injectable()
-export class RefreshTokenHandler {
+export class RefreshTokenUseCase {
   private readonly tokenConfig: TokenConfig;
 
   constructor(

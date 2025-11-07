@@ -160,7 +160,7 @@ export class AuthController {
     return await this.authService.refreshToken(req);
   }
 
-  @Get('google')
+  @Get(AUTH_ROUTES.GOOGLE)
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
     summary: 'Start Google OAuth flow',
@@ -169,7 +169,7 @@ export class AuthController {
   @ApiOkResponse({description: 'Initiates Google OAuth flow'})
   async googleAuth(): Promise<void> {}
 
-  @Get('google/callback')
+  @Get(AUTH_ROUTES.GOOGLE_CALLBACK)
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
     summary: 'Google OAuth callback',
@@ -184,7 +184,7 @@ export class AuthController {
     return await this.authService.oAuthSignin(req.user);
   }
 
-  @Get('facebook')
+  @Get(AUTH_ROUTES.FACEBOOK)
   @UseGuards(AuthGuard('facebook'))
   @ApiOperation({
     summary: 'Start Facebook OAuth flow',
@@ -193,7 +193,7 @@ export class AuthController {
   @ApiOkResponse({description: 'Initiates Facebook OAuth flow'})
   async facebookAuth(): Promise<void> {}
 
-  @Get('facebook/callback')
+  @Get(AUTH_ROUTES.FACEBOOK_CALLBACK)
   @UseGuards(AuthGuard('facebook'))
   @ApiOperation({
     summary: 'Facebook OAuth callback',

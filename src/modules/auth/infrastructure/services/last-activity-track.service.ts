@@ -1,8 +1,13 @@
-import {Injectable} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import {Cron, CronExpression} from '@nestjs/schedule';
-import {PrismaService} from '../../../../platform/prisma/prisma.service';
 import {RedisService} from '../../../../platform/redis/redis.service';
+import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
+import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
 
+/**
+ * Last Activity Track Service
+ * Following Clean Architecture: all database queries go through repository
+ */
 @Injectable()
 export class LastActivityTrackService {
   private readonly TTL = 30 * 60;
@@ -10,7 +15,8 @@ export class LastActivityTrackService {
 
   constructor(
     private readonly redisService: RedisService,
-    private readonly prisma: PrismaService
+    @Inject(USER_REPOSITORY_PORT)
+    private readonly userRepository: UserRepositoryPort
   ) {}
 
   async updateLastActivityToRedis(userId: number): Promise<void> {
@@ -20,12 +26,17 @@ export class LastActivityTrackService {
 
   async updateLastActivityInDB(userId: number): Promise<void> {
     try {
+      // Following Clean Architecture: all database queries go through repository
+      const user = await this.userRepository.findById(userId);
+
+      if (!user) {
+        // User not found or soft-deleted, skip update
+        return;
+      }
+
       const now = new Date();
       await Promise.race([
-        this.prisma.user.update({
-          where: {id: userId},
-          data: {lastActivityAt: now}
-        }),
+        this.userRepository.updateLastActivityAt(userId, now),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout')), 5000))
       ]);
     } catch (error) {
@@ -43,12 +54,20 @@ export class LastActivityTrackService {
       const lastActiveTime = await this.redisService.get(key);
 
       if (lastActiveTime) {
-        await this.prisma.user.update({
-          where: {id: parseInt(userId)},
-          data: {lastActivityAt: new Date(lastActiveTime)}
-        });
+        try {
+          // Following Clean Architecture: all database queries go through repository
+          const user = await this.userRepository.findById(parseInt(userId));
 
-        await this.redisService.del(key);
+          if (user) {
+            await this.userRepository.updateLastActivityAt(parseInt(userId), new Date(lastActiveTime));
+          }
+
+          // Delete key regardless of whether user exists (cleanup)
+          await this.redisService.del(key);
+        } catch (error) {
+          // Skip failed updates, continue with next key
+          continue;
+        }
       }
     }
   }

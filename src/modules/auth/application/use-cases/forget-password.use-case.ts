@@ -11,7 +11,7 @@ import {ForgetPasswordCommand} from '../commands/forget-password.command';
 import {ForgetPasswordSuccessResponseDto} from '../dto/auth-response.dto';
 
 @Injectable()
-export class ForgetPasswordHandler {
+export class ForgetPasswordUseCase {
   private readonly otpExpireTime: number;
 
   constructor(

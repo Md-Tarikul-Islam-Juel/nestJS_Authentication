@@ -16,6 +16,7 @@ export class User {
     public readonly accountLockedUntil: Date | null,
     public readonly lastActivityAt: Date | null,
     public readonly logoutPin: string,
+    public readonly deletedAt: Date | null, // Soft delete timestamp
     public readonly createdAt: Date,
     public readonly updatedAt: Date
   ) {}
@@ -54,8 +55,13 @@ export class User {
       this.accountLockedUntil,
       this.lastActivityAt,
       this.logoutPin,
+      this.deletedAt,
       this.createdAt,
       this.updatedAt
     );
+  }
+
+  isDeleted(): boolean {
+    return this.deletedAt !== null;
   }
 }

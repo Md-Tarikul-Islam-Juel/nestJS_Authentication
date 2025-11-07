@@ -66,7 +66,10 @@ apps/api/src/
 │  │  ├─ command-bus.port.ts                # Optional CQRS command bus port
 │  │  └─ outbox.port.ts                     # Transactional outbox port
 │  ├─ persistence/
-│  │  └─ pagination.ts                      # Offset/cursor helpers (sort keys, nextCursor)
+│  │  ├─ pagination.ts                      # Offset/cursor helpers (sort keys, nextCursor)
+│  │  └─ uow/                               # Shared Unit-of-Work port + tokens (used across modules)
+│  │     ├─ di-tokens.ts
+│  │     └─ uow.port.ts
 │  ├─ idempotency/
 │  │  ├─ key.interceptor.ts                 # Idempotency-Key enforcement for critical POST
 │  │  └─ store.port.ts                      # Idempotency store port (e.g., Redis)
@@ -113,13 +116,11 @@ apps/api/src/
 │  │  │  │  └─ create-user.command.ts
 │  │  │  ├─ queries/                             # Read-side operations (no state change)
 │  │  │  │  └─ get-user.query.ts
-│  │  │  ├─ handlers/                            # Execution logic for commands & queries
-│  │  │  │  ├─ create-user.handler.ts
-│  │  │  │  └─ get-user.handler.ts
+│  │  │  ├─ use-cases/                           # Application use-cases (orchestrate commands & queries)
+│  │  │  │  ├─ create-user.use-case.ts
+│  │  │  │  └─ get-user.use-case.ts
 │  │  │  ├─ mappers/                             # Domain ↔ DTO/View mapping (no ORM, pure mapping)
 │  │  │  │  └─ user.mapper.ts
-│  │  │  └─ uow/                                 # Unit-of-Work Port → abstracts db transaction boundary
-│  │  │     └─ uow.port.ts
 │  │
 │  │  ├─ infrastructure/                         # Infrastructure Layer (Adapters to technologies)
 │  │  │  ├─ prisma/                              # Prisma persistence layer implementations

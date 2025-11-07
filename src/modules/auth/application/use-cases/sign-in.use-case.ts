@@ -15,9 +15,10 @@ import {UserService} from '../../infrastructure/services/user.service';
 import {SignInCommand} from '../commands/sign-in.command';
 import {Tokens} from '../dto/auth-base.dto';
 import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
+import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
 
 @Injectable()
-export class SignInHandler {
+export class SignInUseCase {
   private readonly otpExpireTime: number;
   private readonly tokenConfig: TokenConfig;
 
@@ -59,6 +60,14 @@ export class SignInHandler {
       if (error instanceof InvalidCredentialsError || error instanceof UserNotVerifiedError) {
         throw error;
       }
+
+      // Log unexpected errors for debugging (PII automatically masked)
+      this.logger.error('Unexpected error during user authentication', undefined, error instanceof Error ? error.stack : undefined, {
+        email: command.email,
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error?.constructor?.name || 'Unknown'
+      });
+
       throw new InvalidCredentialsError();
     }
 
@@ -77,7 +86,7 @@ export class SignInHandler {
       await this.otpService.storeOtp(existingUser.email, otp, otpExpireTime);
       await this.emailService.sendOtpEmail(existingUser.email, otp, otpExpireTime);
 
-      this.logger.info(`MFA enabled for user ${existingUser.email}, OTP sent.`, 'SignInHandler.execute()');
+      this.logger.info(`MFA enabled for user ${existingUser.email}, OTP sent.`);
 
       return {
         success: true,
@@ -106,17 +115,26 @@ export class SignInHandler {
 
     const tokens: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
 
-    return this.buildSigninResponse(sanitizedUserDataForResponse as any, tokens, AUTH_MESSAGES.SIGNIN_SUCCESSFUL);
+    return this.buildSigninResponse(sanitizeForMapper(sanitizedUserDataForResponse), tokens, AUTH_MESSAGES.SIGNIN_SUCCESSFUL);
   }
 
-  private buildSigninResponse(userData: any, tokens: Tokens, message: string): SigninSuccessResponseDto {
+  private buildSigninResponse(userData: UserMapperInput, tokens: Tokens, message: string): SigninSuccessResponseDto {
     return {
       success: true,
       message,
       tokens,
       data: {
-        user: userData
+        user: UserMapper.toSignInResponse(userData)
       }
     };
   }
+}
+
+function sanitizeForMapper(user: Record<string, any>): UserMapperInput {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName
+  };
 }

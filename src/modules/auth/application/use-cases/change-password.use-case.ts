@@ -1,17 +1,17 @@
 import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
+import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
+import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
 import {PasswordPolicyService} from '../../domain/services/password-policy.service';
 import {UserService} from '../../infrastructure/services/user.service';
 import {ChangePasswordCommand} from '../commands/change-password.command';
-import {UNIT_OF_WORK_PORT} from '../di-tokens';
 import {ChangePasswordSuccessResponseDto} from '../dto/auth-response.dto';
-import {UnitOfWorkPort} from '../uow/uow.port';
 
 @Injectable()
-export class ChangePasswordHandler {
+export class ChangePasswordUseCase {
   private readonly saltRounds: number;
 
   constructor(
@@ -72,8 +72,14 @@ export class ChangePasswordHandler {
       // Hash and update the password
       const hashedPassword = await this.passwordService.hashPassword(command.newPassword, this.saltRounds);
       await tx.user.update({
-        where: {id: command.userId},
-        data: {password: hashedPassword, isForgetPassword: false}
+        where: {
+          id: command.userId,
+          deletedAt: null // Soft delete: only update active users
+        },
+        data: {
+          password: hashedPassword,
+          isForgetPassword: false
+        }
       });
 
       return {

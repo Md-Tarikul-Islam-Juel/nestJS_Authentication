@@ -7,7 +7,11 @@ export const AUTH_ROUTES = {
   FORGET_PASSWORD: 'forget-password',
   CHANGE_PASSWORD: 'change-password',
   REFRESH_TOKEN: 'refresh-token',
-  LOGOUT_ALL: 'logout-all'
+  LOGOUT_ALL: 'logout-all',
+  GOOGLE: 'google',
+  GOOGLE_CALLBACK: 'google/callback',
+  FACEBOOK: 'facebook',
+  FACEBOOK_CALLBACK: 'facebook/callback'
 } as const;
 
 export const AUTH_MESSAGES = {

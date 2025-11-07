@@ -1,110 +1,173 @@
-import {Injectable} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import {LoggerService} from '../../../../common/observability/logger.service';
-import {PrismaService} from '../../../../platform/prisma/prisma.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
+import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
 import {ChangePasswordDto, OAuthDto, SignupDto} from '../../application/dto/auth-request.dto';
 import {ExistingUserInterface} from '../../application/types/auth.types';
+import {User} from '../../domain/entities/user.entity';
 import {LoginSource} from '../../domain/enums/login-source.enum';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
 import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
+import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
 import {CommonAuthService} from '../../domain/services/common-auth.service';
+import {Email} from '../../domain/value-objects/email.vo';
+import {Password} from '../../domain/value-objects/password.vo';
 
 const failedToChangePassword = AUTH_MESSAGES.FAILED_TO_CHANGE_PASSWORD;
 const oldPasswordIsRequired = AUTH_MESSAGES.OLD_PASSWORD_REQUIRED;
 const unauthorized = AUTH_MESSAGES.UNAUTHORIZED;
-const verifyYourUser = AUTH_MESSAGES.VERIFY_YOUR_USER;
 
 @Injectable()
 export class UserService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(USER_REPOSITORY_PORT)
+    private readonly userRepository: UserRepositoryPort,
     private readonly commonAuthService: CommonAuthService,
-    private logger: LoggerService
+    private readonly logger: LoggerService
   ) {}
 
-  async findUserByEmail(email: string): Promise<ExistingUserInterface> {
-    return this.prisma.user.findUnique({
-      where: {email}
-    });
+  /**
+   * Convert User domain entity to ExistingUserInterface
+   * Following Clean Architecture: infrastructure layer converts domain to application DTOs
+   */
+  private toExistingUserInterface(user: User): ExistingUserInterface {
+    return {
+      id: user.id,
+      email: user.email.getValue(),
+      password: user.getPassword().getHashedValue(),
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      verified: user.verified,
+      isForgetPassword: false, // This field is not in User entity, defaulting to false
+      mfaEnabled: user.mfaEnabled,
+      failedOtpAttempts: user.failedOtpAttempts,
+      accountLockedUntil: user.accountLockedUntil || undefined
+    };
+  }
+
+  async findUserByEmail(email: string): Promise<ExistingUserInterface | null> {
+    // Following Clean Architecture: all database queries go through repository
+    const user = await this.userRepository.findByEmailString(email);
+    if (!user) {
+      return null;
+    }
+    return this.toExistingUserInterface(user);
   }
 
   async createUser(userData: SignupDto | OAuthDto, password: string, loginSource: LoginSource, verified: boolean): Promise<ExistingUserInterface> {
-    return this.prisma.user.upsert({
-      where: {email: userData.email},
-      update: {
-        ...userData,
-        loginSource: loginSource,
-        verified: verified
-      },
-      create: {
-        email: userData.email,
-        password: password,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        loginSource: loginSource,
-        verified: verified,
-        mfaEnabled: userData.mfaEnabled || false,
-        isForgetPassword: false,
-        logoutPin: ''
-      }
-    });
+    // Following Clean Architecture: all database queries go through repository
+    const existingUser = await this.userRepository.findByEmailString(userData.email);
+
+    if (existingUser) {
+      // Update existing non-deleted user
+      // Create updated User entity (immutable, so create new instance)
+      const updatedUser = new User(
+        existingUser.id,
+        existingUser.email,
+        existingUser.getPassword(),
+        userData.firstName || existingUser.firstName,
+        userData.lastName || existingUser.lastName,
+        verified,
+        loginSource,
+        existingUser.authorizerId, // Keep existing authorizerId
+        userData.mfaEnabled || existingUser.mfaEnabled,
+        existingUser.failedOtpAttempts,
+        existingUser.accountLockedUntil,
+        existingUser.lastActivityAt,
+        existingUser.logoutPin,
+        null, // deletedAt - ensure not soft-deleted
+        existingUser.createdAt,
+        existingUser.updatedAt
+      );
+      const savedUser = await this.userRepository.update(updatedUser);
+      return this.toExistingUserInterface(savedUser);
+    }
+
+    // Create new user
+    const now = new Date();
+    const newUser = new User(
+      0, // id will be set by database
+      Email.create(userData.email),
+      Password.create(password), // password is already hashed
+      userData.firstName || null,
+      userData.lastName || null,
+      verified,
+      loginSource,
+      null, // authorizerId - not in DTOs, set elsewhere if needed
+      userData.mfaEnabled || false,
+      0, // failedOtpAttempts
+      null, // accountLockedUntil
+      null, // lastActivityAt
+      '', // logoutPin
+      null, // deletedAt
+      now, // createdAt
+      now // updatedAt
+    );
+    const savedUser = await this.userRepository.save(newUser);
+    return this.toExistingUserInterface(savedUser);
   }
 
   async updateUserVerificationStatus(email: string, verified: boolean): Promise<void> {
-    await this.prisma.user.update({
-      where: {email},
-      data: {verified}
-    });
+    // Following Clean Architecture: all database queries go through repository
+    const user = await this.userRepository.findByEmailString(email);
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+    await this.userRepository.updateVerificationStatus(user.id, verified);
   }
 
   async updateForgotPasswordStatus(email: string, isForgetPassword: boolean): Promise<ExistingUserInterface> {
-    return this.prisma.user.update({
-      where: {email},
-      data: {isForgetPassword}
-    });
+    // Following Clean Architecture: all database queries go through repository
+    const user = await this.userRepository.findByEmailString(email);
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+    const updatedUser = await this.userRepository.updateForgotPasswordStatus(user.id, isForgetPassword);
+    return this.toExistingUserInterface(updatedUser);
   }
 
   async updateLogoutPin(userId: number, logoutPin: string): Promise<void> {
-    await this.prisma.user.update({
-      where: {id: userId},
-      data: {logoutPin}
-    });
+    // Following Clean Architecture: all database queries go through repository
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+    await this.userRepository.updateLogoutPin(userId, logoutPin);
   }
 
   authenticateUser(user: ExistingUserInterface, password: string): void {
     if (!user) {
-      this.logger.error(unauthorized, 'UserService.authenticateUser()', undefined, this.commonAuthService.removeSensitiveData(user, ['password']));
+      // Context automatically detected from call stack
+      this.logger.error(unauthorized, undefined, undefined, user);
       throw new InvalidCredentialsError();
     }
 
     const isPasswordValid = bcrypt.compareSync(password, user.password);
 
     if (!isPasswordValid) {
-      this.logger.error(
-        `Authentication failed. Invalid password for user ${user.email}.`,
-        'UserService.authenticateUser()',
-        undefined,
-        this.commonAuthService.removeSensitiveData(user, ['password'])
-      );
+      // Log invalid password attempt with email (automatically masked by logger)
+      // Context automatically detected from call stack
+      this.logger.error('Authentication failed. Invalid password provided.', undefined, undefined, {
+        email: user.email, // Will be automatically masked: "md***@gmail.com"
+        userId: user.id,
+        loginAttempt: 'invalid_password'
+      });
       throw new InvalidCredentialsError();
     }
 
     if (!user.verified) {
-      this.logger.error(
-        `Authentication failed. User ${user.email} is not verified.`,
-        'UserService.authenticateUser()',
-        undefined,
-        this.commonAuthService.removeSensitiveData(user, ['password'])
-      );
+      // Context automatically detected from call stack
+      this.logger.error(`Authentication failed. User ${user.email} is not verified.`, undefined, undefined, user);
       throw new UserNotVerifiedError(user.email);
     }
   }
 
   public verifyUserExist(user: ExistingUserInterface, callback: () => void, message: string): void {
     if (!user) {
-      this.logger.error(message, 'UserService.verifyUserExist()', undefined, this.commonAuthService.removeSensitiveData(user, ['password']));
+      // Context automatically detected from call stack
+      this.logger.error(message, undefined, undefined, user);
       callback();
     }
   }
@@ -113,7 +176,7 @@ export class UserService {
     if (!user) {
       this.logger.error({
         message: `${failedToChangePassword} because user not exist`,
-        details: this.commonAuthService.removeSensitiveData(user, ['password'])
+        details: user
       });
       throw new UserNotFoundError();
     }
@@ -122,7 +185,7 @@ export class UserService {
       if (!changePasswordData.oldPassword) {
         this.logger.error({
           message: `${oldPasswordIsRequired}`,
-          details: this.commonAuthService.removeSensitiveData(user, ['password'])
+          details: user
         });
         throw new InvalidCredentialsError();
       }
@@ -131,7 +194,7 @@ export class UserService {
       if (!isPasswordValid) {
         this.logger.error({
           message: `${failedToChangePassword} because password not matched`,
-          details: this.commonAuthService.removeSensitiveData(user, ['password'])
+          details: user
         });
         throw new InvalidCredentialsError();
       }
@@ -140,7 +203,7 @@ export class UserService {
     if (!user.verified) {
       this.logger.error({
         message: `${failedToChangePassword}`,
-        details: this.commonAuthService.removeSensitiveData(user, ['password'])
+        details: user
       });
       throw new UserNotVerifiedError(user.email);
     }

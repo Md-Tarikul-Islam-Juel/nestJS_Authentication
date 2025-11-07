@@ -15,16 +15,8 @@
 
 ## Data & Storage (Prisma-focused)
 
-**Optimistic locking:** version/updatedAt + WHERE version = ?.
-
 **Soft delete** + unique constraints that ignore soft-deleted rows.
 
 **PII taxonomy:** tag columns by sensitivity; masking/redaction at ORM & log layers.
 
 **Monetary/decimal:** use DECIMAL + minor units; never float.
-
-**Migrations:** gated in CI (dry-run + backup check); rollout with feature flags.
-
-**Backups & DR:** RPO/RTO targets; PITR; restore drills.
-
-**Multi-tenancy strategy:** by column with RLS or by schema/database—decide early.

@@ -10,7 +10,7 @@ import {ResendOtpCommand} from '../commands/resend-otp.command';
 import {ResendSuccessResponseDto} from '../dto/auth-response.dto';
 
 @Injectable()
-export class ResendOtpHandler {
+export class ResendOtpUseCase {
   private readonly otpExpireTime: number;
 
   constructor(

@@ -4,21 +4,22 @@ import {ConfigService} from '@nestjs/config';
 import {APP_INTERCEPTOR} from '@nestjs/core';
 import {ScheduleModule} from '@nestjs/schedule';
 import {AccessTokenStrategy} from '../../common/auth/strategies/access-token.strategy';
-import {RefreshTokenStrategy} from '../../common/auth/strategies/refresh-token.strategy';
 import {LogoutTokenValidateService} from '../../common/auth/strategies/logout-token-validate.service';
+import {RefreshTokenStrategy} from '../../common/auth/strategies/refresh-token.strategy';
 import {LoggerModule} from '../../common/observability/logger.module';
 import {PlatformJwtModule} from '../../platform/jwt/jwt.module';
 import {PrismaModule} from '../../platform/prisma/prisma.module';
 import {RedisModule} from '../../platform/redis/redis.module';
-import {UNIT_OF_WORK_PORT, USER_REPOSITORY_PORT} from './application/di-tokens';
-import {ChangePasswordHandler} from './application/handlers/change-password.handler';
-import {ForgetPasswordHandler} from './application/handlers/forget-password.handler';
-import {OAuthSignInHandler} from './application/handlers/oauth-sign-in.handler';
-import {RefreshTokenHandler} from './application/handlers/refresh-token.handler';
-import {RegisterUserHandler} from './application/handlers/register-user.handler';
-import {ResendOtpHandler} from './application/handlers/resend-otp.handler';
-import {SignInHandler} from './application/handlers/sign-in.handler';
-import {VerifyOtpHandler} from './application/handlers/verify-otp.handler';
+import {UNIT_OF_WORK_PORT} from '../../common/persistence/uow/di-tokens';
+import {USER_REPOSITORY_PORT} from './application/di-tokens';
+import {ChangePasswordUseCase} from './application/use-cases/change-password.use-case';
+import {ForgetPasswordUseCase} from './application/use-cases/forget-password.use-case';
+import {OAuthSignInUseCase} from './application/use-cases/oauth-sign-in.use-case';
+import {RefreshTokenUseCase} from './application/use-cases/refresh-token.use-case';
+import {RegisterUserUseCase} from './application/use-cases/register-user.use-case';
+import {ResendOtpUseCase} from './application/use-cases/resend-otp.use-case';
+import {SignInUseCase} from './application/use-cases/sign-in.use-case';
+import {VerifyOtpUseCase} from './application/use-cases/verify-otp.use-case';
 import {AuthService} from './application/services/auth.service';
 import {CommonAuthService} from './domain/services/common-auth.service';
 import {OtpDomainService} from './domain/services/otp-domain.service';
@@ -68,15 +69,15 @@ import {IsNotBlockedPassword} from './interface/validators/password-validator.va
     FacebookStrategy,
     // Application Layer
     AuthService,
-    // Command Handlers
-    RegisterUserHandler,
-    SignInHandler,
-    VerifyOtpHandler,
-    ResendOtpHandler,
-    ForgetPasswordHandler,
-    ChangePasswordHandler,
-    RefreshTokenHandler,
-    OAuthSignInHandler,
+    // Application Use Cases
+    RegisterUserUseCase,
+    SignInUseCase,
+    VerifyOtpUseCase,
+    ResendOtpUseCase,
+    ForgetPasswordUseCase,
+    ChangePasswordUseCase,
+    RefreshTokenUseCase,
+    OAuthSignInUseCase,
     // Domain Services
     PasswordPolicyService,
     OtpDomainService,
