@@ -1,14 +1,15 @@
-import {Injectable} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {EmailServiceError} from '../../domain/errors/email-service-error.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {OtpDomainService} from '../../domain/services/otp-domain.service';
-import {EmailService} from '../../infrastructure/email/email.service';
-import {OtpService} from '../../infrastructure/services/otp.service';
-import {UserService} from '../../infrastructure/services/user.service';
+import type {EmailServicePort} from '../../domain/repositories/email.service.port';
+import {EMAIL_SERVICE_PORT} from '../di-tokens';
+import {OtpDomainService} from '../services/otp-domain.service';
+import {OtpService} from '../services/otp.service';
+import {UserService} from '../services/user.service';
 import {ForgetPasswordCommand} from '../commands/forget-password.command';
-import {ForgetPasswordSuccessResponseDto} from '../dto/auth-response.dto';
+import type {ForgetPasswordSuccessResponseDto} from '../../interface/dto/auth-response.dto';
 
 @Injectable()
 export class ForgetPasswordUseCase {
@@ -18,7 +19,8 @@ export class ForgetPasswordUseCase {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly otpService: OtpService,
-    private readonly emailService: EmailService,
+    @Inject(EMAIL_SERVICE_PORT)
+    private readonly emailService: EmailServicePort,
     private readonly otpDomainService: OtpDomainService
   ) {
     this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');

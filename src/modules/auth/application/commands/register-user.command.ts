@@ -1,4 +1,4 @@
-import {SignupDto} from '../dto/auth-request.dto';
+import type {SignupDto} from '../../interface/dto/auth-request.dto';
 
 export class RegisterUserCommand {
   constructor(

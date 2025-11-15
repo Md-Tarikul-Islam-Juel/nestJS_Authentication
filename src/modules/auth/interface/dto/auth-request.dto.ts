@@ -1,10 +1,7 @@
 import {ApiProperty} from '@nestjs/swagger';
 import {IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, Matches} from 'class-validator';
-import * as dotenv from 'dotenv';
-import {PasswordValidation} from '../../interface/validators/password-decorator.decorator';
+import {PasswordValidation} from '../validators/password-decorator.decorator';
 import {EmailDto} from './auth-base.dto';
-
-dotenv.config();
 
 // =================================================================
 //----------------------------SIGN UP-------------------------------

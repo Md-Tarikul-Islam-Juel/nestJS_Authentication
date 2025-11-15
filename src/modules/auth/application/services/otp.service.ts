@@ -1,17 +1,18 @@
 import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import {LoggerService} from '../../../../common/observability/logger.service';
-import {RedisService} from '../../../../platform/redis/redis.service';
-import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
 import {AccountLockedError} from '../../domain/errors/account-locked.error';
 import {CacheError} from '../../domain/errors/cache-error.error';
 import {InvalidOtpError} from '../../domain/errors/invalid-otp.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
-import {CommonAuthService} from '../../domain/services/common-auth.service';
+import type {LoggerPort} from '../../domain/repositories/logger.port';
+import type {OtpCachePort} from '../../domain/repositories/otp-cache.port';
+import type {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
+import {LOGGER_PORT, OTP_CACHE_PORT, USER_REPOSITORY_PORT} from '../di-tokens';
+import {CommonAuthService} from './common-auth.service';
 
 /**
  * OTP Service
+ * Application layer service for OTP operations
  * Following Clean Architecture: all database queries go through repository
  */
 @Injectable()
@@ -20,10 +21,12 @@ export class OtpService {
   private lockoutTime: number;
 
   constructor(
-    private readonly redisService: RedisService,
+    @Inject(OTP_CACHE_PORT)
+    private readonly otpCache: OtpCachePort,
     @Inject(USER_REPOSITORY_PORT)
     private readonly userRepository: UserRepositoryPort,
-    private readonly logger: LoggerService,
+    @Inject(LOGGER_PORT)
+    private readonly logger: LoggerPort,
     private readonly configService: ConfigService,
     private readonly commonAuthService: CommonAuthService
   ) {
@@ -34,7 +37,7 @@ export class OtpService {
   async storeOtp(email: string, otp: string, otpExpireTime: number): Promise<void> {
     try {
       await Promise.race([
-        this.redisService.set(`otp:${email}`, otp, otpExpireTime * 60),
+        this.otpCache.store(email, otp, otpExpireTime * 60),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Redis timeout')), 5000))
       ]);
       this.logger.info({message: `OTP for ${email} stored successfully.`});
@@ -63,7 +66,7 @@ export class OtpService {
       throw new AccountLockedError(remainingLockTime);
     }
 
-    const storedOtp = await this.redisService.get(`otp:${email}`);
+    const storedOtp = await this.otpCache.get(email);
 
     if (!storedOtp || storedOtp !== otp) {
       const failedAttempts = user.failedOtpAttempts + 1;
@@ -88,7 +91,7 @@ export class OtpService {
 
   async deleteOtp(email: string): Promise<void> {
     try {
-      await this.redisService.del(`otp:${email}`);
+      await this.otpCache.delete(email);
       this.logger.info({message: `OTP for ${email} deleted successfully.`});
     } catch (error) {
       this.logger.error({

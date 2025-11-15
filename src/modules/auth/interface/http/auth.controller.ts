@@ -2,10 +2,11 @@ import {Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedExce
 import {AuthGuard} from '@nestjs/passport';
 import {ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {Request} from 'express';
+import type {TokenPayload} from '../../domain/repositories/jwt-service.port';
 import {AccessTokenStrategy} from '../../../../common/auth/strategies/access-token.strategy';
 import {RefreshTokenStrategy} from '../../../../common/auth/strategies/refresh-token.strategy';
 import {AUTH_ROUTES} from '../../../_shared/constants';
-import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../../application/dto/auth-request.dto';
+import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../dto/auth-request.dto';
 import {
   ChangePasswordErrorResponseDto,
   ChangePasswordSuccessResponseDto,
@@ -21,9 +22,9 @@ import {
   SignupSuccessResponseDto,
   SignupUserAlreadyExistResponseDto,
   VerificationErrorResponseDto
-} from '../../application/dto/auth-response.dto';
+} from '../dto/auth-response.dto';
 import {AuthService} from '../../application/services/auth.service';
-import {LogoutService} from '../../infrastructure/services/logout.service';
+import {LogoutService} from '../../application/services/logout.service';
 import {TrackLastActivityInterceptor} from './interceptors/track-last-activity.interceptor';
 
 @ApiTags('Auth')
@@ -146,9 +147,21 @@ export class AuthController {
   })
   async changePassword(
     @Body() changePasswordData: ChangePasswordDto,
-    @Req() req: Request
+    @Req() req: Request & {user: TokenPayload & {isForgetPassword?: boolean}}
   ): Promise<ChangePasswordSuccessResponseDto | ChangePasswordErrorResponseDto | ChangePasswordUnverifiedResponseDto> {
-    return await this.authService.changePassword(changePasswordData, req);
+    // Create application DTO from interface DTO and request context
+    const appChangePasswordDto: ChangePasswordDto & {userId: number; email: string; isForgetPassword: boolean} = {
+      ...changePasswordData,
+      userId: req.user.id,
+      email: req.user.email,
+      isForgetPassword: req.user.isForgetPassword || false
+    };
+    const appResponse = await this.authService.changePassword(appChangePasswordDto);
+    // Convert application response to interface DTO
+    return {
+      success: appResponse.success,
+      message: appResponse.message
+    };
   }
 
   @UseGuards(RefreshTokenStrategy)
@@ -156,8 +169,14 @@ export class AuthController {
   @Get(AUTH_ROUTES.REFRESH_TOKEN)
   @ApiOperation({summary: 'Refresh access token'})
   @ApiOkResponse({description: 'Access token refreshed successfully', type: RefreshTokenSuccessResponseDto})
-  async refreshToken(@Req() req: Request): Promise<RefreshTokenSuccessResponseDto> {
-    return await this.authService.refreshToken(req);
+  async refreshToken(@Req() req: Request & {user: TokenPayload}): Promise<RefreshTokenSuccessResponseDto> {
+    const appResponse = await this.authService.refreshToken(req);
+    // Convert application response to interface DTO
+    return {
+      success: appResponse.success,
+      message: appResponse.message,
+      tokens: appResponse.tokens
+    };
   }
 
   @Get(AUTH_ROUTES.GOOGLE)
@@ -180,8 +199,16 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Authentication failed due to invalid or expired credentials.'
   })
-  async googleAuthRedirect(@Req() req): Promise<SigninSuccessResponseDto> {
-    return await this.authService.oAuthSignin(req.user);
+  async googleAuthRedirect(@Req() req: Request & {user: any}): Promise<SigninSuccessResponseDto> {
+    const appResponse = await this.authService.oAuthSignin(req.user);
+    // Convert application response to interface DTO
+    return {
+      success: appResponse.success,
+      message: appResponse.message,
+      tokens: appResponse.tokens,
+      data: appResponse.data,
+      mfa: appResponse.mfa
+    };
   }
 
   @Get(AUTH_ROUTES.FACEBOOK)
@@ -204,8 +231,16 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Authentication failed due to invalid or expired credentials.'
   })
-  async facebookAuthRedirect(@Req() req): Promise<SigninSuccessResponseDto> {
-    return await this.authService.oAuthSignin(req.user);
+  async facebookAuthRedirect(@Req() req: Request & {user: any}): Promise<SigninSuccessResponseDto> {
+    const appResponse = await this.authService.oAuthSignin(req.user);
+    // Convert application response to interface DTO
+    return {
+      success: appResponse.success,
+      message: appResponse.message,
+      tokens: appResponse.tokens,
+      data: appResponse.data,
+      mfa: appResponse.mfa
+    };
   }
 
   @HttpCode(HttpStatus.OK)
@@ -217,8 +252,8 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized access'
   })
-  async logout(@Req() req: Request): Promise<{success: boolean; message: string}> {
-    const user = req.user as any;
+  async logout(@Req() req: Request & {user: TokenPayload}): Promise<{success: boolean; message: string}> {
+    const user = req.user;
 
     if (!user || !user.id) {
       throw new UnauthorizedException('User not authenticated');

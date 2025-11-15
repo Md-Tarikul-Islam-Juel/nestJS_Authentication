@@ -1,21 +1,24 @@
-import {Injectable} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import {LoggerService} from '../../../../common/observability/logger.service';
-import {PlatformJwtService, TokenConfig} from '../../../../platform/jwt/jwt.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
 import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
-import {CommonAuthService} from '../../domain/services/common-auth.service';
-import {OtpDomainService} from '../../domain/services/otp-domain.service';
-import {EmailService} from '../../infrastructure/email/email.service';
-import {LastActivityTrackService} from '../../infrastructure/services/last-activity-track.service';
-import {OtpService} from '../../infrastructure/services/otp.service';
-import {UserService} from '../../infrastructure/services/user.service';
+import type {EmailServicePort} from '../../domain/repositories/email.service.port';
+import type {JwtServicePort, TokenConfig} from '../../domain/repositories/jwt-service.port';
+import type {LoggerPort} from '../../domain/repositories/logger.port';
+import type {Tokens} from '../../interface/dto/auth-base.dto';
+import type {SigninSuccessResponseDto} from '../../interface/dto/auth-response.dto';
 import {SignInCommand} from '../commands/sign-in.command';
-import {Tokens} from '../dto/auth-base.dto';
-import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
+import {EMAIL_SERVICE_PORT, JWT_SERVICE_PORT, LOGGER_PORT} from '../di-tokens';
 import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
+import {CommonAuthService} from '../services/common-auth.service';
+import {LastActivityTrackService} from '../services/last-activity-track.service';
+import {OtpDomainService} from '../services/otp-domain.service';
+import {OtpService} from '../services/otp.service';
+import {UserService} from '../services/user.service';
+import type {ExistingUserInterface} from '../types/auth.types';
+import {createTokenConfig} from './token-config.factory';
 
 @Injectable()
 export class SignInUseCase {
@@ -24,25 +27,20 @@ export class SignInUseCase {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    @Inject(LOGGER_PORT)
+    private readonly logger: LoggerPort,
     private readonly userService: UserService,
     private readonly otpService: OtpService,
-    private readonly jwtService: PlatformJwtService,
-    private readonly emailService: EmailService,
+    @Inject(JWT_SERVICE_PORT)
+    private readonly jwtService: JwtServicePort,
+    @Inject(EMAIL_SERVICE_PORT)
+    private readonly emailService: EmailServicePort,
     private readonly commonAuthService: CommonAuthService,
     private readonly otpDomainService: OtpDomainService,
     private readonly lastActivityService: LastActivityTrackService
   ) {
     this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
-    this.tokenConfig = {
-      useJwe: this.configService.get<boolean>('authConfig.token.useJwe'),
-      jweAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey'),
-      jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey'),
-      jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtAccessTokenExpireTime'),
-      jweRefreshTokenSecretKey: this.configService.get<string>('authConfig.token.jweRefreshTokenSecretKey'),
-      jwtRefreshTokenSecretKey: this.configService.get<string>('authConfig.token.jwtRefreshTokenSecretKey'),
-      jweJwtRefreshTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtRefreshTokenExpireTime')
-    };
+    this.tokenConfig = createTokenConfig(this.configService);
   }
 
   async execute(command: SignInCommand): Promise<SigninSuccessResponseDto> {
@@ -62,7 +60,7 @@ export class SignInUseCase {
       }
 
       // Log unexpected errors for debugging (PII automatically masked)
-      this.logger.error('Unexpected error during user authentication', undefined, error instanceof Error ? error.stack : undefined, {
+      this.logger.error('Unexpected error during user authentication', 'SignInUseCase', error instanceof Error ? error.stack : undefined, {
         email: command.email,
         error: error instanceof Error ? error.message : String(error),
         errorType: error?.constructor?.name || 'Unknown'
@@ -78,7 +76,7 @@ export class SignInUseCase {
     await this.userService.updateLogoutPin(existingUser.id, newLogoutPin);
 
     // Update the user object with new logoutPin for token generation
-    (existingUser as any).logoutPin = newLogoutPin;
+    const userWithLogoutPin: ExistingUserInterface & {logoutPin: string} = {...existingUser, logoutPin: newLogoutPin};
 
     if (existingUser.mfaEnabled) {
       const otp = this.otpDomainService.generateOtp(6);
@@ -86,7 +84,7 @@ export class SignInUseCase {
       await this.otpService.storeOtp(existingUser.email, otp, otpExpireTime);
       await this.emailService.sendOtpEmail(existingUser.email, otp, otpExpireTime);
 
-      this.logger.info(`MFA enabled for user ${existingUser.email}, OTP sent.`);
+      this.logger.info({message: `MFA enabled for user ${existingUser.email}, OTP sent.`});
 
       return {
         success: true,
@@ -98,7 +96,7 @@ export class SignInUseCase {
       };
     }
 
-    const sanitizedUserDataForToken = this.commonAuthService.removeSensitiveData(existingUser, ['password']);
+    const sanitizedUserDataForToken = this.commonAuthService.sanitizeForToken(userWithLogoutPin, ['password']);
     const sanitizedUserDataForResponse = this.commonAuthService.removeSensitiveData(existingUser, [
       'password',
       'verified',

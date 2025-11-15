@@ -1,11 +1,12 @@
 import {Inject, Injectable} from '@nestjs/common';
-import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
-import {OtpDomainService} from '../../domain/services/otp-domain.service';
+import type {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
+import {USER_REPOSITORY_PORT} from '../di-tokens';
+import {OtpDomainService} from './otp-domain.service';
 
 /**
  * Logout Service
+ * Application layer service for logout operations
  * Following Clean Architecture: all database queries go through repository
  */
 @Injectable()

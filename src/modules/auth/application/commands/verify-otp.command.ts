@@ -1,4 +1,4 @@
-import {VerificationDto} from '../dto/auth-request.dto';
+import type {VerificationDto} from '../../interface/dto/auth-request.dto';
 
 export class VerifyOtpCommand {
   constructor(

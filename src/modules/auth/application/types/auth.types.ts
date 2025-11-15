@@ -40,3 +40,35 @@ export interface TokenConfig {
   jwtRefreshTokenSecretKey: string;
   jweJwtRefreshTokenExpireTime: string;
 }
+
+/**
+ * OAuth User Interface
+ * Represents user data from OAuth providers (Google, Facebook)
+ */
+export interface OAuthUser {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  loginSource?: string;
+  authorizerId?: string;
+}
+
+/**
+ * Request with user payload
+ * Used for authenticated requests that include user information
+ */
+export interface AuthenticatedRequest {
+  user: {
+    id: number;
+    email: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * User with logout pin
+ * Extends ExistingUserInterface to include logoutPin for token generation
+ */
+export interface UserWithLogoutPin extends ExistingUserInterface {
+  logoutPin?: string;
+}

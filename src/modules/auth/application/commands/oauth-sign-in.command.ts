@@ -1,3 +1,5 @@
+import type {OAuthUser} from '../types/auth.types';
+
 export class OAuthSignInCommand {
   constructor(
     public readonly email: string,
@@ -8,7 +10,7 @@ export class OAuthSignInCommand {
     public readonly authorizerId?: string
   ) {}
 
-  static fromUser(user: any): OAuthSignInCommand {
+  static fromUser(user: OAuthUser): OAuthSignInCommand {
     return new OAuthSignInCommand(user.email, user.firstName, user.lastName, user.loginSource || 'google', false, user.authorizerId);
   }
 }

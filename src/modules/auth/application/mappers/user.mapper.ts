@@ -1,5 +1,5 @@
 import {User} from '../../domain/entities/user.entity';
-import {SignInResponseUserDto, SignupResponseUserDto} from '../dto/auth-response.dto';
+import type {SignInResponseUserDto, SignupResponseUserDto} from '../../interface/dto/auth-response.dto';
 
 export type UserMapperInput = {
   id: number;

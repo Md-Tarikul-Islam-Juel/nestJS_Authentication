@@ -1,11 +1,12 @@
 import {Inject, Injectable} from '@nestjs/common';
 import {Cron, CronExpression} from '@nestjs/schedule';
-import {RedisService} from '../../../../platform/redis/redis.service';
-import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
-import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
+import type {ActivityCachePort} from '../../domain/repositories/activity-cache.port';
+import type {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
+import {ACTIVITY_CACHE_PORT, USER_REPOSITORY_PORT} from '../di-tokens';
 
 /**
  * Last Activity Track Service
+ * Application layer service for tracking user activity
  * Following Clean Architecture: all database queries go through repository
  */
 @Injectable()
@@ -14,14 +15,15 @@ export class LastActivityTrackService {
   private redisKey = 'trackLastActivity';
 
   constructor(
-    private readonly redisService: RedisService,
+    @Inject(ACTIVITY_CACHE_PORT)
+    private readonly activityCache: ActivityCachePort,
     @Inject(USER_REPOSITORY_PORT)
     private readonly userRepository: UserRepositoryPort
   ) {}
 
   async updateLastActivityToRedis(userId: number): Promise<void> {
     const now = new Date().toISOString();
-    await this.redisService.set(`${this.redisKey}:${userId}`, now, this.TTL);
+    await this.activityCache.set(`${this.redisKey}:${userId}`, now, this.TTL);
   }
 
   async updateLastActivityInDB(userId: number): Promise<void> {
@@ -47,11 +49,11 @@ export class LastActivityTrackService {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async batchUpdateLastActivity(): Promise<void> {
-    const keys = await this.redisService.keys(`${this.redisKey}:*`);
+    const keys = await this.activityCache.keys(`${this.redisKey}:*`);
 
     for (const key of keys) {
       const userId = key.split(':')[1];
-      const lastActiveTime = await this.redisService.get(key);
+      const lastActiveTime = await this.activityCache.get(key);
 
       if (lastActiveTime) {
         try {
@@ -63,7 +65,7 @@ export class LastActivityTrackService {
           }
 
           // Delete key regardless of whether user exists (cleanup)
-          await this.redisService.del(key);
+          await this.activityCache.delete(key);
         } catch (error) {
           // Skip failed updates, continue with next key
           continue;

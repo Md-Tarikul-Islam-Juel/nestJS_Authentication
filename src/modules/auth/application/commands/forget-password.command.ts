@@ -1,4 +1,4 @@
-import {ForgetPasswordDto} from '../dto/auth-request.dto';
+import type {ForgetPasswordDto} from '../../interface/dto/auth-request.dto';
 
 export class ForgetPasswordCommand {
   constructor(public readonly email: string) {}

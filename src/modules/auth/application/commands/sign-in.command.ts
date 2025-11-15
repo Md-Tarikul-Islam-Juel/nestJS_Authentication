@@ -1,4 +1,4 @@
-import {SigninDto} from '../dto/auth-request.dto';
+import type {SigninDto} from '../../interface/dto/auth-request.dto';
 
 export class SignInCommand {
   constructor(

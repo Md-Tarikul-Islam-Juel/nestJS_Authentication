@@ -1,32 +1,36 @@
-import {Inject} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import {LoggerService} from '../../../../common/observability/logger.service';
 import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
 import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {LoginSource} from '../../domain/enums/login-source.enum';
 import {EmailAlreadyExistsError} from '../../domain/errors/email-already-exists.error';
-import {CommonAuthService} from '../../domain/services/common-auth.service';
-import {OtpDomainService} from '../../domain/services/otp-domain.service';
-import {PasswordPolicyService} from '../../domain/services/password-policy.service';
-import {EmailService} from '../../infrastructure/email/email.service';
-import {LastActivityTrackService} from '../../infrastructure/services/last-activity-track.service';
-import {OtpService} from '../../infrastructure/services/otp.service';
-import {UserService} from '../../infrastructure/services/user.service';
+import type {EmailServicePort} from '../../domain/repositories/email.service.port';
+import type {LoggerPort} from '../../domain/repositories/logger.port';
+import type {SignupSuccessResponseDto} from '../../interface/dto/auth-response.dto';
 import {RegisterUserCommand} from '../commands/register-user.command';
-import {SignupSuccessResponseDto} from '../dto/auth-response.dto';
+import {EMAIL_SERVICE_PORT, LOGGER_PORT} from '../di-tokens';
 import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
+import {CommonAuthService} from '../services/common-auth.service';
+import {LastActivityTrackService} from '../services/last-activity-track.service';
+import {OtpDomainService} from '../services/otp-domain.service';
+import {OtpService} from '../services/otp.service';
+import {PasswordPolicyService} from '../services/password-policy.service';
+import {UserService} from '../services/user.service';
+@Injectable()
 export class RegisterUserUseCase {
   private readonly saltRounds: number;
   private readonly otpExpireTime: number;
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    @Inject(LOGGER_PORT)
+    private readonly logger: LoggerPort,
     private readonly userService: UserService,
     private readonly otpService: OtpService,
     private readonly passwordService: PasswordPolicyService,
-    private readonly emailService: EmailService,
+    @Inject(EMAIL_SERVICE_PORT)
+    private readonly emailService: EmailServicePort,
     private readonly commonAuthService: CommonAuthService,
     private readonly otpDomainService: OtpDomainService,
     private readonly lastActivityService: LastActivityTrackService,

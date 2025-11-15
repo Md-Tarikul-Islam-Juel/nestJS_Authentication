@@ -1,4 +1,4 @@
-import {ChangePasswordDto} from '../dto/auth-request.dto';
+import type {ChangePasswordDto} from '../../interface/dto/auth-request.dto';
 
 export class ChangePasswordCommand {
   constructor(

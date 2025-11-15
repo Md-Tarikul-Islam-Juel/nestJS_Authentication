@@ -1,4 +1,13 @@
 import {Injectable} from '@nestjs/common';
+import type {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../../interface/dto/auth-request.dto';
+import type {
+  ChangePasswordSuccessResponseDto,
+  ForgetPasswordSuccessResponseDto,
+  RefreshTokenSuccessResponseDto,
+  ResendSuccessResponseDto,
+  SigninSuccessResponseDto,
+  SignupSuccessResponseDto
+} from '../../interface/dto/auth-response.dto';
 import {ChangePasswordCommand} from '../commands/change-password.command';
 import {ForgetPasswordCommand} from '../commands/forget-password.command';
 import {OAuthSignInCommand} from '../commands/oauth-sign-in.command';
@@ -7,15 +16,7 @@ import {RegisterUserCommand} from '../commands/register-user.command';
 import {ResendOtpCommand} from '../commands/resend-otp.command';
 import {SignInCommand} from '../commands/sign-in.command';
 import {VerifyOtpCommand} from '../commands/verify-otp.command';
-import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../dto/auth-request.dto';
-import {
-  ChangePasswordSuccessResponseDto,
-  ForgetPasswordSuccessResponseDto,
-  RefreshTokenSuccessResponseDto,
-  ResendSuccessResponseDto,
-  SigninSuccessResponseDto,
-  SignupSuccessResponseDto
-} from '../dto/auth-response.dto';
+import type {AuthenticatedRequest, OAuthUser} from '../types/auth.types';
 import {ChangePasswordUseCase} from '../use-cases/change-password.use-case';
 import {ForgetPasswordUseCase} from '../use-cases/forget-password.use-case';
 import {OAuthSignInUseCase} from '../use-cases/oauth-sign-in.use-case';
@@ -63,17 +64,24 @@ export class AuthService {
     return this.forgetPasswordUseCase.execute(command);
   }
 
-  async changePassword(changePasswordData: ChangePasswordDto, req: any): Promise<ChangePasswordSuccessResponseDto> {
-    const command = ChangePasswordCommand.fromDto(changePasswordData, req.user.id, req.user.email, req.user.isForgetPassword || false);
+  async changePassword(
+    changePasswordData: ChangePasswordDto & {userId: number; email: string; isForgetPassword: boolean}
+  ): Promise<ChangePasswordSuccessResponseDto> {
+    const command = ChangePasswordCommand.fromDto(
+      changePasswordData,
+      changePasswordData.userId,
+      changePasswordData.email,
+      changePasswordData.isForgetPassword
+    );
     return this.changePasswordUseCase.execute(command);
   }
 
-  async refreshToken(req: any): Promise<RefreshTokenSuccessResponseDto> {
+  async refreshToken(req: AuthenticatedRequest): Promise<RefreshTokenSuccessResponseDto> {
     const command = RefreshTokenCommand.fromRequest(req.user);
     return this.refreshTokenUseCase.execute(command);
   }
 
-  async oAuthSignin(oAuthUser: any): Promise<SigninSuccessResponseDto> {
+  async oAuthSignin(oAuthUser: OAuthUser): Promise<SigninSuccessResponseDto> {
     const command = OAuthSignInCommand.fromUser(oAuthUser);
     return this.oAuthSignInUseCase.execute(command);
   }

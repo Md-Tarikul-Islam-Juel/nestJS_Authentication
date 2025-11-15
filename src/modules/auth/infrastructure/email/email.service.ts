@@ -4,9 +4,15 @@ import {ConfigService} from '@nestjs/config';
 import {LoggerService} from '../../../../common/observability/logger.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {EmailServiceError} from '../../domain/errors/email-service-error.error';
+import {EmailServicePort} from '../../domain/repositories/email.service.port';
 
+/**
+ * Email Service Implementation
+ * Infrastructure adapter implementing EmailServicePort
+ * Uses NestJS MailerService to send emails via SMTP
+ */
 @Injectable()
-export class EmailService {
+export class EmailService implements EmailServicePort {
   private readonly otpSenderMail: string;
 
   constructor(

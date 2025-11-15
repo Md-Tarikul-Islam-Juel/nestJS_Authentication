@@ -1,12 +1,25 @@
-import * as bcrypt from 'bcrypt';
+import {Inject, Injectable} from '@nestjs/common';
+import type {PasswordHasherPort} from '../../domain/repositories/password-hasher.port';
+import {PASSWORD_HASHER_PORT} from '../di-tokens';
 
+/**
+ * Password Policy Service
+ * Application layer service for password hashing and generation
+ * Following Clean Architecture: uses domain port, not infrastructure directly
+ */
+@Injectable()
 export class PasswordPolicyService {
+  constructor(
+    @Inject(PASSWORD_HASHER_PORT)
+    private readonly passwordHasher: PasswordHasherPort
+  ) {}
+
   async hashPassword(password: string, saltRounds: number): Promise<string> {
-    return bcrypt.hash(password, saltRounds);
+    return this.passwordHasher.hash(password, saltRounds);
   }
 
   async comparePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, hashedPassword);
+    return this.passwordHasher.compare(plainPassword, hashedPassword);
   }
 
   randomPasswordGenerator(length: number): string {

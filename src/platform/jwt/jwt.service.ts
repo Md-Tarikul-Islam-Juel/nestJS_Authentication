@@ -2,28 +2,11 @@ import {Injectable} from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
 import * as jose from 'jose';
 import {CompactEncrypt} from 'jose';
+// Import types from domain layer (domain defines the contract)
+import type {TokenConfig, TokenPayload, Tokens} from '../../modules/auth/domain/repositories/jwt-service.port';
 
-export interface TokenPayload {
-  id: number;
-  email: string;
-  logoutPin?: string;
-  [key: string]: any;
-}
-
-export interface TokenConfig {
-  useJwe: boolean;
-  jweAccessTokenSecretKey: string;
-  jwtAccessTokenSecretKey: string;
-  jweJwtAccessTokenExpireTime: string;
-  jweRefreshTokenSecretKey: string;
-  jwtRefreshTokenSecretKey: string;
-  jweJwtRefreshTokenExpireTime: string;
-}
-
-export interface Tokens {
-  accessToken: string;
-  refreshToken: string;
-}
+// Re-export types for backward compatibility (platform can export domain types)
+export type {TokenConfig, TokenPayload, Tokens};
 
 /**
  * JWT Service - Core token generation and validation

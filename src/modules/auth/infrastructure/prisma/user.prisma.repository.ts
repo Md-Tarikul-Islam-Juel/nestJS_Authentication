@@ -1,5 +1,5 @@
 import {Injectable} from '@nestjs/common';
-import {Prisma, PrismaClient} from '@prisma/client';
+import {Prisma} from '@prisma/client';
 import {PrismaService} from '../../../../platform/prisma/prisma.service';
 import {User} from '../../domain/entities/user.entity';
 import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
@@ -56,7 +56,6 @@ export class UserPrismaRepository implements UserRepositoryPort {
   }
 
   async save(user: User): Promise<User> {
-    const data = UserPrismaMapper.toPersistence(user);
     const prismaUser = await this.prisma.user.create({
       data: {
         email: user.email.getValue(),
@@ -80,7 +79,7 @@ export class UserPrismaRepository implements UserRepositoryPort {
 
   async update(user: User): Promise<User> {
     const data = UserPrismaMapper.toPersistence(user);
-    
+
     const prismaUser = await this.prisma.user.update({
       where: {id: user.id},
       data
@@ -226,7 +225,7 @@ class TransactionScopedUserRepository implements UserRepositoryPort {
 
   async update(user: User): Promise<User> {
     const data = UserPrismaMapper.toPersistence(user);
-    
+
     const prismaUser = await this.tx.user.update({
       where: {id: user.id},
       data

@@ -5,10 +5,10 @@ import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {PasswordPolicyService} from '../../domain/services/password-policy.service';
-import {UserService} from '../../infrastructure/services/user.service';
+import {PasswordPolicyService} from '../services/password-policy.service';
+import {UserService} from '../services/user.service';
 import {ChangePasswordCommand} from '../commands/change-password.command';
-import {ChangePasswordSuccessResponseDto} from '../dto/auth-response.dto';
+import type {ChangePasswordSuccessResponseDto} from '../../interface/dto/auth-response.dto';
 
 @Injectable()
 export class ChangePasswordUseCase {
@@ -47,8 +47,11 @@ export class ChangePasswordUseCase {
       // Verify old password matches current password and user is verified
       await this.userService.verifyUserAndChangePassword(
         existingUser,
-        {oldPassword: command.oldPassword, newPassword: command.newPassword},
-        {user: {isForgetPassword: false}}
+          {
+            oldPassword: command.oldPassword,
+            newPassword: command.newPassword
+          },
+          {user: {id: existingUser.id, email: existingUser.email, isForgetPassword: false}}
       );
 
       // Verify new password is different from current password (hashed comparison)
@@ -58,7 +61,13 @@ export class ChangePasswordUseCase {
       }
     } else {
       // For forget password flow, verify user is verified (old password validation is skipped)
-      await this.userService.verifyUserAndChangePassword(existingUser, {newPassword: command.newPassword}, {user: {isForgetPassword: true}});
+      await this.userService.verifyUserAndChangePassword(
+        existingUser,
+          {
+            newPassword: command.newPassword
+          },
+          {user: {id: existingUser.id, email: existingUser.email, isForgetPassword: true}}
+      );
 
       // For forget password, also verify new password is different from current password
       const isNewPasswordSameAsCurrent = await this.passwordService.comparePassword(command.newPassword, existingUser.password);

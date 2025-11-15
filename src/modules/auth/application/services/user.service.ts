@@ -1,17 +1,17 @@
 import {Inject, Injectable} from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
-import {LoggerService} from '../../../../common/observability/logger.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {USER_REPOSITORY_PORT} from '../../application/di-tokens';
-import {ChangePasswordDto, OAuthDto, SignupDto} from '../../application/dto/auth-request.dto';
-import {ExistingUserInterface} from '../../application/types/auth.types';
+import type {LoggerPort} from '../../domain/repositories/logger.port';
+import type {PasswordHasherPort} from '../../domain/repositories/password-hasher.port';
+import {USER_REPOSITORY_PORT, LOGGER_PORT, PASSWORD_HASHER_PORT} from '../di-tokens';
+import type {ChangePasswordDto, OAuthDto, SignupDto} from '../../interface/dto/auth-request.dto';
+import type {AuthenticatedRequest, ExistingUserInterface} from '../types/auth.types';
 import {User} from '../../domain/entities/user.entity';
 import {LoginSource} from '../../domain/enums/login-source.enum';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
 import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
-import {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
-import {CommonAuthService} from '../../domain/services/common-auth.service';
+import type {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
+import {CommonAuthService} from './common-auth.service';
 import {Email} from '../../domain/value-objects/email.vo';
 import {Password} from '../../domain/value-objects/password.vo';
 
@@ -19,13 +19,21 @@ const failedToChangePassword = AUTH_MESSAGES.FAILED_TO_CHANGE_PASSWORD;
 const oldPasswordIsRequired = AUTH_MESSAGES.OLD_PASSWORD_REQUIRED;
 const unauthorized = AUTH_MESSAGES.UNAUTHORIZED;
 
+/**
+ * User Service
+ * Application layer service for user operations
+ * Following Clean Architecture: all database queries go through repository
+ */
 @Injectable()
 export class UserService {
   constructor(
     @Inject(USER_REPOSITORY_PORT)
     private readonly userRepository: UserRepositoryPort,
     private readonly commonAuthService: CommonAuthService,
-    private readonly logger: LoggerService
+    @Inject(LOGGER_PORT)
+    private readonly logger: LoggerPort,
+    @Inject(PASSWORD_HASHER_PORT)
+    private readonly passwordHasher: PasswordHasherPort
   ) {}
 
   /**
@@ -144,7 +152,7 @@ export class UserService {
       throw new InvalidCredentialsError();
     }
 
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    const isPasswordValid = this.passwordHasher.compareSync(password, user.password);
 
     if (!isPasswordValid) {
       // Log invalid password attempt with email (automatically masked by logger)
@@ -172,7 +180,7 @@ export class UserService {
     }
   }
 
-  async verifyUserAndChangePassword(user: ExistingUserInterface, changePasswordData: ChangePasswordDto, req: any): Promise<void> {
+  async verifyUserAndChangePassword(user: ExistingUserInterface, changePasswordData: ChangePasswordDto, req: AuthenticatedRequest): Promise<void> {
     if (!user) {
       this.logger.error({
         message: `${failedToChangePassword} because user not exist`,
@@ -190,7 +198,7 @@ export class UserService {
         throw new InvalidCredentialsError();
       }
 
-      const isPasswordValid = bcrypt.compareSync(changePasswordData.oldPassword, user.password);
+      const isPasswordValid = this.passwordHasher.compareSync(changePasswordData.oldPassword, user.password);
       if (!isPasswordValid) {
         this.logger.error({
           message: `${failedToChangePassword} because password not matched`,
@@ -209,3 +217,4 @@ export class UserService {
     }
   }
 }
+

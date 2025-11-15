@@ -2,17 +2,20 @@ import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
 import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
-import {PlatformJwtService, TokenConfig} from '../../../../platform/jwt/jwt.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {CommonAuthService} from '../../domain/services/common-auth.service';
-import {OtpDomainService} from '../../domain/services/otp-domain.service';
-import {LastActivityTrackService} from '../../infrastructure/services/last-activity-track.service';
-import {OtpService} from '../../infrastructure/services/otp.service';
-import {UserService} from '../../infrastructure/services/user.service';
+import type {JwtServicePort, TokenConfig} from '../../domain/repositories/jwt-service.port';
+import type {Tokens} from '../../interface/dto/auth-base.dto';
+import type {SigninSuccessResponseDto} from '../../interface/dto/auth-response.dto';
 import {VerifyOtpCommand} from '../commands/verify-otp.command';
-import {Tokens} from '../dto/auth-base.dto';
-import {SigninSuccessResponseDto} from '../dto/auth-response.dto';
+import {JWT_SERVICE_PORT} from '../di-tokens';
 import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
+import {CommonAuthService} from '../services/common-auth.service';
+import {LastActivityTrackService} from '../services/last-activity-track.service';
+import {OtpDomainService} from '../services/otp-domain.service';
+import {OtpService} from '../services/otp.service';
+import {UserService} from '../services/user.service';
+import type {ExistingUserInterface} from '../types/auth.types';
+import {createTokenConfig} from './token-config.factory';
 
 @Injectable()
 export class VerifyOtpUseCase {
@@ -22,22 +25,15 @@ export class VerifyOtpUseCase {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly otpService: OtpService,
-    private readonly jwtService: PlatformJwtService,
+    @Inject(JWT_SERVICE_PORT)
+    private readonly jwtService: JwtServicePort,
     private readonly commonAuthService: CommonAuthService,
     private readonly lastActivityService: LastActivityTrackService,
     private readonly otpDomainService: OtpDomainService,
     @Inject(UNIT_OF_WORK_PORT)
     private readonly uow: UnitOfWorkPort
   ) {
-    this.tokenConfig = {
-      useJwe: this.configService.get<boolean>('authConfig.token.useJwe'),
-      jweAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jweAccessTokenSecretKey'),
-      jwtAccessTokenSecretKey: this.configService.get<string>('authConfig.token.jwtAccessTokenSecretKey'),
-      jweJwtAccessTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtAccessTokenExpireTime'),
-      jweRefreshTokenSecretKey: this.configService.get<string>('authConfig.token.jweRefreshTokenSecretKey'),
-      jwtRefreshTokenSecretKey: this.configService.get<string>('authConfig.token.jwtRefreshTokenSecretKey'),
-      jweJwtRefreshTokenExpireTime: this.configService.get<string>('authConfig.token.jweJwtRefreshTokenExpireTime')
-    };
+    this.tokenConfig = createTokenConfig(this.configService);
   }
 
   async execute(command: VerifyOtpCommand): Promise<SigninSuccessResponseDto> {
@@ -64,14 +60,9 @@ export class VerifyOtpUseCase {
     await this.userService.updateLogoutPin(existingUser.id, newLogoutPin);
 
     // Update the user object with new logoutPin for token generation
-    (existingUser as any).logoutPin = newLogoutPin;
+    const userWithLogoutPin: ExistingUserInterface & {logoutPin: string} = {...existingUser, logoutPin: newLogoutPin};
 
-    const sanitizedUserDataForToken = this.commonAuthService.removeSensitiveData(existingUser, [
-      'password',
-      'mfaEnabled',
-      'failedOtpAttempts',
-      'accountLockedUntil'
-    ]);
+    const sanitizedUserDataForToken = this.commonAuthService.sanitizeForToken(userWithLogoutPin, ['password']);
     const sanitizedUserDataForResponse = this.commonAuthService.removeSensitiveData(existingUser, [
       'password',
       'verified',
@@ -86,12 +77,11 @@ export class VerifyOtpUseCase {
     ]);
 
     await this.lastActivityService.updateLastActivityInDB(existingUser.id);
-
     const token: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
     return this.buildSigninResponse(sanitizeForMapper(sanitizedUserDataForResponse), token, AUTH_MESSAGES.OTP_AUTHORIZED);
   }
 
-  private async verifyUserAndOtp(user: any, otp: string): Promise<void> {
+  private async verifyUserAndOtp(user: ExistingUserInterface, otp: string): Promise<void> {
     await this.otpService.verifyOtp(user.email, otp);
   }
 
