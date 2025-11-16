@@ -231,7 +231,6 @@ apps/api/src/
 │  │     ├─ validators/                          # Framework adapters (class-validator decorators)
 │  │     │  ├─ password-validator.class.ts       # Thin adapter delegating to PasswordValidationService
 │  │     │  └─ password-decorator.decorator.ts   # Decorator factory for @PasswordValidation()
-│  │     └─ presenters/                          # Shared view helpers (used by REST & GraphQL)
 │  │
 │  ├─ users/                                     # Bounded Context: Users Domain (Example structure)
 │  │  ├─ domain/
