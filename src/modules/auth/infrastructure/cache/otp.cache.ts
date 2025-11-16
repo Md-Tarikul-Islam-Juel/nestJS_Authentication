@@ -8,7 +8,7 @@ import {OtpCachePort} from '../../domain/repositories/otp-cache.port';
  * Uses RedisService to cache OTP codes
  */
 @Injectable()
-export class OtpCache implements OtpCachePort {
+export class OtpCacheAdapter implements OtpCachePort {
   constructor(private readonly redis: RedisService) {}
 
   async store(email: string, otp: string, ttlSeconds: number): Promise<void> {

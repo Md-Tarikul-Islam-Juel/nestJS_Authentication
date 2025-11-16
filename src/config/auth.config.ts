@@ -10,7 +10,20 @@ export default registerAs('authConfig', () => ({
     jweJwtAccessTokenExpireTime: process.env.JWE_JWT_ACCESS_TOKEN_EXPIRATION ?? '86400s', // default to 1 day
     jweRefreshTokenSecretKey: process.env.JWE_REFRESH_TOKEN_SECRET ?? 'abcdef1234567890abcdef1234567890',
     jwtRefreshTokenSecretKey: process.env.JWT_REFRESH_TOKEN_SECRET ?? 'abcdefghijklmnopqrstuvwxz1234567',
-    jweJwtRefreshTokenExpireTime: process.env.JWE_JWT_REFRESH_TOKEN_EXPIRATION ?? '30d' // default to 30 days
+    jweJwtRefreshTokenExpireTime: process.env.JWE_JWT_REFRESH_TOKEN_EXPIRATION ?? '30d', // default to 30 days
+    jti: {
+      strategy: process.env.REFRESH_JTI_STRATEGY ?? 'uuid', // uuid | nanoid | random-bytes
+      length: parseInt(process.env.REFRESH_JTI_LENGTH ?? '21', 10),
+      prefix: process.env.REFRESH_JTI_PREFIX ?? ''
+    },
+    session: {
+      prefix: process.env.SESSION_ID_PREFIX ?? 'sid_'
+    },
+    redis: {
+      prefix: process.env.AUTH_REDIS_PREFIX ?? 'auth:'
+    },
+    reusePolicy: process.env.REFRESH_REUSE_POLICY ?? 'revoke_session', // revoke_session | revoke_all | lock_user
+    enforceNoStore: (process.env.AUTH_NO_STORE ?? 'true').toLowerCase() === 'true'
   },
 
   otp: {

@@ -10,6 +10,7 @@ import {LoggerModule} from '../../common/observability/logger.module';
 import {UNIT_OF_WORK_PORT} from '../../common/persistence/uow/di-tokens';
 import {PlatformJwtModule} from '../../platform/jwt/jwt.module';
 import {PrismaModule} from '../../platform/prisma/prisma.module';
+import {JtiAllowlistService} from '../../platform/redis/jti-allowlist.service';
 import {RedisModule} from '../../platform/redis/redis.module';
 import {
   ACTIVITY_CACHE_PORT,
@@ -38,15 +39,15 @@ import {RegisterUserUseCase} from './application/use-cases/register-user.use-cas
 import {ResendOtpUseCase} from './application/use-cases/resend-otp.use-case';
 import {SignInUseCase} from './application/use-cases/sign-in.use-case';
 import {VerifyOtpUseCase} from './application/use-cases/verify-otp.use-case';
-import {ActivityCache} from './infrastructure/cache/activity.cache';
-import {OtpCache} from './infrastructure/cache/otp.cache';
-import {EmailService} from './infrastructure/email/email.service';
-import {JwtAdapter} from './infrastructure/jwt/jwt.adapter';
-import {OtpGeneratorAdapter} from './infrastructure/otp/otp-generator.adapter';
-import {PasswordHasherAdapter} from './infrastructure/password/password-hasher.adapter';
+import {ActivityCacheAdapter} from './infrastructure/cache/activity-cache.adapter';
+import {OtpCacheAdapter} from './infrastructure/cache/otp.cache';
+import {EmailServiceAdapter} from './infrastructure/email/email.service';
+import {JwtServiceAdapter} from './infrastructure/jwt/jwt.adapter';
 import {FacebookStrategy} from './infrastructure/oauth-strategies/facebook.strategy';
 import {GoogleStrategy} from './infrastructure/oauth-strategies/google.strategy';
 import {LoggerAdapter} from './infrastructure/observability/logger.adapter';
+import {OtpGeneratorAdapter} from './infrastructure/otp/otp-generator.adapter';
+import {PasswordHasherAdapter} from './infrastructure/password/password-hasher.adapter';
 import {UserPrismaRepository} from './infrastructure/prisma/user.prisma.repository';
 import {PrismaUnitOfWork} from './infrastructure/uow/prisma.uow';
 import {AuthController} from './interface/http/auth.controller';
@@ -109,24 +110,24 @@ import {PasswordValidator} from './interface/validators/password-validator.class
     UserPrismaRepository,
     {
       provide: EMAIL_SERVICE_PORT,
-      useClass: EmailService
+      useClass: EmailServiceAdapter
     },
-    EmailService,
+    EmailServiceAdapter,
     {
       provide: OTP_CACHE_PORT,
-      useClass: OtpCache
+      useClass: OtpCacheAdapter
     },
-    OtpCache,
+    OtpCacheAdapter,
     {
       provide: ACTIVITY_CACHE_PORT,
-      useClass: ActivityCache
+      useClass: ActivityCacheAdapter
     },
-    ActivityCache,
+    ActivityCacheAdapter,
     {
       provide: JWT_SERVICE_PORT,
-      useClass: JwtAdapter
+      useClass: JwtServiceAdapter
     },
-    JwtAdapter,
+    JwtServiceAdapter,
     {
       provide: LOGGER_PORT,
       useClass: LoggerAdapter
@@ -149,6 +150,8 @@ import {PasswordValidator} from './interface/validators/password-validator.class
       useClass: PrismaUnitOfWork
     },
     PrismaUnitOfWork,
+    // JTI allowlist
+    JtiAllowlistService,
     // Validators
     PasswordValidator,
     // Token validation

@@ -2,6 +2,7 @@ import {Module} from '@nestjs/common';
 import {JwtModule} from '@nestjs/jwt';
 import {PassportModule} from '@nestjs/passport';
 import {PlatformJwtService} from './jwt.service';
+import {JtiProvider} from './jti.provider';
 
 /**
  * Platform JWT Module
@@ -13,8 +14,8 @@ import {PlatformJwtService} from './jwt.service';
     PassportModule,
     JwtModule.register({}) // JWT options configured via ConfigService at usage time
   ],
-  providers: [PlatformJwtService],
-  exports: [JwtModule, PassportModule, PlatformJwtService]
+  providers: [PlatformJwtService, JtiProvider],
+  exports: [JwtModule, PassportModule, PlatformJwtService, JtiProvider]
 })
 export class PlatformJwtModule {}
 

@@ -12,6 +12,8 @@ export interface TokenPayload {
   id: number;
   email: string;
   logoutPin?: string;
+  sid?: string;
+  jti?: string;
   [key: string]: any;
 }
 

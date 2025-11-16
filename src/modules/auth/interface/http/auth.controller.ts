@@ -166,10 +166,12 @@ export class AuthController {
 
   @UseGuards(RefreshTokenStrategy)
   @HttpCode(HttpStatus.OK)
-  @Get(AUTH_ROUTES.REFRESH_TOKEN)
+  @Post(AUTH_ROUTES.REFRESH_TOKEN)
   @ApiOperation({summary: 'Refresh access token'})
   @ApiOkResponse({description: 'Access token refreshed successfully', type: RefreshTokenSuccessResponseDto})
   async refreshToken(@Req() req: Request & {user: TokenPayload}): Promise<RefreshTokenSuccessResponseDto> {
+    // Explicitly instruct caches not to store auth responses
+    (req.res as any)?.setHeader?.('Cache-Control', 'no-store');
     const appResponse = await this.authService.refreshToken(req);
     // Convert application response to interface DTO
     return {

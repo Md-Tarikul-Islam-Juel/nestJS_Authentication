@@ -1,5 +1,8 @@
 import {Inject, Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
+import {JtiProvider} from '../../../../platform/jwt/jti.provider';
+import {JtiAllowlistService} from '../../../../platform/redis/jti-allowlist.service';
+import {UserSessionIndexService} from '../../../../platform/redis/user-session-index.service';
 import {AUTH_MESSAGES} from '../../../_shared/constants';
 import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
 import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
@@ -17,7 +20,6 @@ import {LastActivityTrackService} from '../services/last-activity-track.service'
 import {OtpDomainService} from '../services/otp-domain.service';
 import {OtpService} from '../services/otp.service';
 import {UserService} from '../services/user.service';
-import type {ExistingUserInterface} from '../types/auth.types';
 import {createTokenConfig} from './token-config.factory';
 
 @Injectable()
@@ -37,7 +39,10 @@ export class SignInUseCase {
     private readonly emailService: EmailServicePort,
     private readonly commonAuthService: CommonAuthService,
     private readonly otpDomainService: OtpDomainService,
-    private readonly lastActivityService: LastActivityTrackService
+    private readonly lastActivityService: LastActivityTrackService,
+    private readonly jtiProvider: JtiProvider,
+    private readonly jtiAllowlist: JtiAllowlistService,
+    private readonly userSessionIndex: UserSessionIndexService
   ) {
     this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
     this.tokenConfig = createTokenConfig(this.configService);
@@ -71,13 +76,6 @@ export class SignInUseCase {
 
     await this.userService.updateForgotPasswordStatus(existingUser.email, false);
 
-    // Generate and update logoutPin for token validation
-    const newLogoutPin = this.otpDomainService.generateOtp(6);
-    await this.userService.updateLogoutPin(existingUser.id, newLogoutPin);
-
-    // Update the user object with new logoutPin for token generation
-    const userWithLogoutPin: ExistingUserInterface & {logoutPin: string} = {...existingUser, logoutPin: newLogoutPin};
-
     if (existingUser.mfaEnabled) {
       const otp = this.otpDomainService.generateOtp(6);
       const otpExpireTime = this.otpExpireTime || 5;
@@ -96,7 +94,7 @@ export class SignInUseCase {
       };
     }
 
-    const sanitizedUserDataForToken = this.commonAuthService.sanitizeForToken(userWithLogoutPin, ['password']);
+    const sanitizedUserDataForToken = this.commonAuthService.sanitizeForToken(existingUser, ['password']);
     const sanitizedUserDataForResponse = this.commonAuthService.removeSensitiveData(existingUser, [
       'password',
       'verified',
@@ -111,7 +109,16 @@ export class SignInUseCase {
       'updatedAt'
     ]);
 
-    const tokens: Tokens = await this.jwtService.generateTokens(sanitizedUserDataForToken, this.tokenConfig);
+    // Generate session and jti, allowlist in Redis for rotation checks
+    const sessionId = this.jtiProvider.generateSessionId();
+    const jti = this.jtiProvider.generateJti();
+
+    const refreshTtlSeconds = toSeconds(this.tokenConfig.jweJwtRefreshTokenExpireTime);
+    await this.jtiAllowlist.setCurrentJtiForSession(sessionId, jti, refreshTtlSeconds);
+    // Track session for user (for logout-all)
+    await this.userSessionIndex.addSession(existingUser.id, sessionId, refreshTtlSeconds);
+
+    const tokens: Tokens = await this.jwtService.generateTokens({...sanitizedUserDataForToken, sid: sessionId, jti}, this.tokenConfig);
 
     return this.buildSigninResponse(sanitizeForMapper(sanitizedUserDataForResponse), tokens, AUTH_MESSAGES.SIGNIN_SUCCESSFUL);
   }
@@ -135,4 +142,27 @@ function sanitizeForMapper(user: Record<string, any>): UserMapperInput {
     firstName: user.firstName,
     lastName: user.lastName
   };
+}
+
+function toSeconds(duration: string): number {
+  const trimmed = String(duration).trim();
+  const match = /^(\d+)\s*([smhd])?$/i.exec(trimmed);
+  if (!match) {
+    const n = parseInt(trimmed, 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+  const value = parseInt(match[1], 10);
+  const unit = (match[2] || 's').toLowerCase();
+  switch (unit) {
+    case 's':
+      return value;
+    case 'm':
+      return value * 60;
+    case 'h':
+      return value * 3600;
+    case 'd':
+      return value * 86400;
+    default:
+      return value;
+  }
 }

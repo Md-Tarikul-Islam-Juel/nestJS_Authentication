@@ -5,6 +5,7 @@ import {AuthGuard} from '@nestjs/passport';
 import * as jose from 'jose';
 import {LoggerService} from '../../observability/logger.service';
 import {LogoutTokenValidateService} from './logout-token-validate.service';
+import {JtiAllowlistService} from '../../../platform/redis/jti-allowlist.service';
 
 /**
  * Refresh Token Strategy
@@ -17,7 +18,8 @@ export class RefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guard') {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly logoutTokenValidateService: LogoutTokenValidateService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    private readonly jtiAllowlist: JtiAllowlistService
   ) {
     super();
   }
@@ -50,31 +52,20 @@ export class RefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guard') {
         throw new UnauthorizedException('Invalid or expired refresh token');
       }
 
-      // Validate logoutPin
-      const userId = request.user.id;
-      const tokenLogoutPin = request.user.logoutPin || '';
-      const logoutPinFromDb = await this.logoutTokenValidateService.getLogoutPinById(userId);
-
-      if (!logoutPinFromDb) {
-        this.logger.error({
-          message: `User ${userId} has no logoutPin found`
-        });
+      // Validate jti against Redis allowlist
+      const sid = request.user.sid;
+      const jti = request.user.jti;
+      if (!sid || !jti) {
+        this.logger.error({message: 'Missing sid/jti in refresh token payload'});
+        throw new UnauthorizedException('Invalid token');
+      }
+      const currentJti = await this.jtiAllowlist.getCurrentJtiForSession(sid);
+      if (!currentJti || currentJti !== jti) {
+        this.logger.error({message: 'Refresh token reuse detected or session revoked', details: {sid}});
         throw new UnauthorizedException('Invalid token');
       }
 
-      // Validate logoutPin matches
-      if (logoutPinFromDb !== tokenLogoutPin) {
-        this.logger.error({
-          message: `LogoutPin mismatch for user ${userId}`,
-          details: {
-            tokenPinLength: tokenLogoutPin.length,
-            dbPinLength: logoutPinFromDb.length,
-            dbPinEmpty: logoutPinFromDb === '',
-            tokenPinEmpty: tokenLogoutPin === ''
-          }
-        });
-        throw new UnauthorizedException('Invalid token');
-      }
+      // Removed logoutPin validation; JTI + session allowlist is authoritative
 
       return true;
     } catch (err) {

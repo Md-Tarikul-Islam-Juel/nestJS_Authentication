@@ -12,7 +12,7 @@ import {EmailServicePort} from '../../domain/repositories/email.service.port';
  * Uses NestJS MailerService to send emails via SMTP
  */
 @Injectable()
-export class EmailService implements EmailServicePort {
+export class EmailServiceAdapter implements EmailServicePort {
   private readonly otpSenderMail: string;
 
   constructor(

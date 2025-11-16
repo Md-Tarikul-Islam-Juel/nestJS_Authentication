@@ -8,7 +8,7 @@ import {JwtServicePort, TokenConfig, TokenPayload, Tokens} from '../../domain/re
  * Uses PlatformJwtService for token generation
  */
 @Injectable()
-export class JwtAdapter implements JwtServicePort {
+export class JwtServiceAdapter implements JwtServicePort {
   constructor(private readonly platformJwtService: PlatformJwtService) {}
 
   async generateTokens(user: TokenPayload, config: TokenConfig): Promise<Tokens> {
