@@ -2,10 +2,13 @@ import {Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedExce
 import {AuthGuard} from '@nestjs/passport';
 import {ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {Request} from 'express';
-import type {TokenPayload} from '../../domain/repositories/jwt-service.port';
 import {AccessTokenStrategy} from '../../../../common/auth/strategies/access-token.strategy';
 import {RefreshTokenStrategy} from '../../../../common/auth/strategies/refresh-token.strategy';
+import {API_VERSIONS} from '../../../../common/http/version.constants';
 import {AUTH_ROUTES} from '../../../_shared/constants';
+import {AuthService} from '../../application/services/auth.service';
+import {LogoutService} from '../../application/services/logout.service';
+import type {TokenPayload} from '../../domain/repositories/jwt-service.port';
 import {ChangePasswordDto, ForgetPasswordDto, ResendDto, SigninDto, SignupDto, VerificationDto} from '../dto/auth-request.dto';
 import {
   ChangePasswordErrorResponseDto,
@@ -23,12 +26,13 @@ import {
   SignupUserAlreadyExistResponseDto,
   VerificationErrorResponseDto
 } from '../dto/auth-response.dto';
-import {AuthService} from '../../application/services/auth.service';
-import {LogoutService} from '../../application/services/logout.service';
 import {TrackLastActivityInterceptor} from './interceptors/track-last-activity.interceptor';
 
 @ApiTags('Auth')
-@Controller(AUTH_ROUTES.BASE)
+@Controller({
+  path: AUTH_ROUTES.BASE,
+  version: [API_VERSIONS.V1, API_VERSIONS.V2]
+})
 @UseInterceptors(TrackLastActivityInterceptor)
 export class AuthController {
   constructor(

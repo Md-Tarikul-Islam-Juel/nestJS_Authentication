@@ -63,6 +63,35 @@ export class PiiMaskerService {
   }
 
   /**
+   * Deeply mask PII for any data structure (objects, arrays, primitives).
+   * Useful for logging/interceptors where nested payloads may contain sensitive data.
+   */
+  maskDeep<T = unknown>(value: T): T {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(item => this.maskDeep(item)) as unknown as T;
+    }
+
+    if (typeof value === 'object') {
+      const maskedObject = this.maskObject(value as Record<string, any>);
+      const result: Record<string, unknown> = {};
+      for (const [key, nestedValue] of Object.entries(maskedObject)) {
+        result[key] = this.maskDeep(nestedValue);
+      }
+      return result as T;
+    }
+
+    if (typeof value === 'string') {
+      return this.maskString(value) as unknown as T;
+    }
+
+    return value;
+  }
+
+  /**
    * Check if a field is sensitive (should be completely redacted)
    */
   private isSensitiveField(fieldName: string): boolean {

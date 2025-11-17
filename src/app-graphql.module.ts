@@ -4,7 +4,6 @@ import {APP_FILTER} from '@nestjs/core';
 import {GraphQLModule} from '@nestjs/graphql';
 import {join} from 'path';
 import {GqlExceptionFilter} from './common/graphql/errors/gql-exception.filter';
-import {UsersModule} from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -13,8 +12,7 @@ import {UsersModule} from './modules/users/users.module';
       autoSchemaFile: join(process.cwd(), 'src/graphql-schema/schema-user.gql'),
       path: '/user',
       context: ({req, res}) => ({req, res})
-    }),
-    UsersModule
+    })
   ],
   providers: [
     {

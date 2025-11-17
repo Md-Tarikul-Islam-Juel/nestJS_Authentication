@@ -1,0 +1,40 @@
+name: Security Scans
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: '0 5 * * 1' # Weekly Monday scan
+
+jobs:
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (high severity threshold)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Generate audit report (critical threshold)
+        run: |
+          npm audit --omit=dev --audit-level=critical --json > audit-report.json || true
+          cat audit-report.json

@@ -4,7 +4,6 @@ import {JwtService} from '@nestjs/jwt';
 import {AuthGuard} from '@nestjs/passport';
 import * as jose from 'jose';
 import {LoggerService} from '../../observability/logger.service';
-import {LogoutTokenValidateService} from './logout-token-validate.service';
 import {JtiAllowlistService} from '../../../platform/redis/jti-allowlist.service';
 
 /**
@@ -17,7 +16,6 @@ export class RefreshTokenStrategy extends AuthGuard('jwt_refreshToken_guard') {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly logoutTokenValidateService: LogoutTokenValidateService,
     private readonly logger: LoggerService,
     private readonly jtiAllowlist: JtiAllowlistService
   ) {

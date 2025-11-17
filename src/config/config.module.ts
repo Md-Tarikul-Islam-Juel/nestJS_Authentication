@@ -1,20 +1,23 @@
 import {Global, Module} from '@nestjs/common';
 import {ConfigModule as NestConfigModule} from '@nestjs/config';
+import {existsSync} from 'fs';
 import authConfig from './auth.config';
-import {envSchema} from './env.schema';
+import {validateEnv} from './env.schema';
+
+const DEFAULT_ENV = 'development';
+const nodeEnv = process.env.NODE_ENV?.trim() || DEFAULT_ENV;
+const candidateEnvs = [`.env.${nodeEnv}.local`, `.env.${nodeEnv}`, '.env.local', '.env'];
+const envFilePath = candidateEnvs.filter(path => existsSync(path));
 
 @Global()
 @Module({
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: envFilePath.length > 0 ? envFilePath : undefined,
+      ignoreEnvFile: envFilePath.length === 0,
       load: [authConfig],
-      validationSchema: envSchema,
-      validationOptions: {
-        allowUnknown: true, // Allow other env vars not in schema
-        abortEarly: false // Show all validation errors, not just the first one
-      }
+      validate: validateEnv
     })
   ],
   exports: [NestConfigModule]

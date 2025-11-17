@@ -144,6 +144,32 @@ export class RedisService {
     }
   }
 
+  async increment(key: string, expireInSec: number): Promise<number> {
+    try {
+      await this.ensureConnected();
+      const pipeline = this.redisClient.multi();
+      pipeline.incr(key);
+      pipeline.expire(key, expireInSec, 'NX');
+      const results = await pipeline.exec();
+      const incrementResult = results?.[0]?.[1];
+      return typeof incrementResult === 'number' ? incrementResult : Number(incrementResult ?? 0);
+    } catch (error) {
+      this.logger.error(`Redis increment error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  async ttl(key: string): Promise<number | null> {
+    try {
+      await this.ensureConnected();
+      const ttl = await this.redisClient.ttl(key);
+      return ttl >= 0 ? ttl : null;
+    } catch (error) {
+      this.logger.error(`Redis TTL error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
+  }
+
   async del(key: string): Promise<void> {
     try {
       await this.ensureConnected();

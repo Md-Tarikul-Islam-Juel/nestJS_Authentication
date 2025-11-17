@@ -4,7 +4,6 @@ import {ConfigService} from '@nestjs/config';
 import {APP_INTERCEPTOR} from '@nestjs/core';
 import {ScheduleModule} from '@nestjs/schedule';
 import {AccessTokenStrategy} from '../../common/auth/strategies/access-token.strategy';
-import {LogoutTokenValidateService} from '../../common/auth/strategies/logout-token-validate.service';
 import {RefreshTokenStrategy} from '../../common/auth/strategies/refresh-token.strategy';
 import {LoggerModule} from '../../common/observability/logger.module';
 import {UNIT_OF_WORK_PORT} from '../../common/persistence/uow/di-tokens';
@@ -155,7 +154,6 @@ import {PasswordValidator} from './interface/validators/password-validator.class
     // Validators
     PasswordValidator,
     // Token validation
-    LogoutTokenValidateService,
     // Interceptors
     {
       provide: APP_INTERCEPTOR,
