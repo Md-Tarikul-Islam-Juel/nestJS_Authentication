@@ -13,9 +13,10 @@ import { DDoSProtectionGuard } from './common/guards/ddos-protection.guard';
 import { ConfigModule } from './config/config.module';
 import { PrismaModule } from './platform/prisma/prisma.module';
 import { RedisModule } from './platform/redis/redis.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, RedisModule, LoggerModule, SecurityModule, AppHttpModule],
+  imports: [ConfigModule, PrismaModule, RedisModule, LoggerModule, SecurityModule, AppHttpModule, HealthModule],
   providers: [
     {
       provide: APP_INTERCEPTOR,
