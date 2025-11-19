@@ -1,9 +1,9 @@
-import {ApolloDriver, ApolloDriverConfig} from '@nestjs/apollo';
-import {Module} from '@nestjs/common';
-import {APP_FILTER} from '@nestjs/core';
-import {GraphQLModule} from '@nestjs/graphql';
-import {join} from 'path';
-import {GqlExceptionFilter} from './common/graphql/errors/gql-exception.filter';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import { GraphQLModule } from '@nestjs/graphql';
+import { join } from 'path';
+import { GqlExceptionFilter } from './common/graphql/errors/gql-exception.filter';
 
 @Module({
   imports: [
@@ -11,7 +11,12 @@ import {GqlExceptionFilter} from './common/graphql/errors/gql-exception.filter';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/graphql-schema/schema-user.gql'),
       path: '/user',
-      context: ({req, res}) => ({req, res})
+      context: ({ req, res }) => ({ req, res }),
+      buildSchemaOptions: {
+        numberScalarMode: 'integer',
+      },
+      // Allow empty schema during development
+      include: [],
     })
   ],
   providers: [
@@ -21,4 +26,4 @@ import {GqlExceptionFilter} from './common/graphql/errors/gql-exception.filter';
     }
   ]
 })
-export class AppGraphqlModule {}
+export class AppGraphqlModule { }

@@ -1,0 +1,132 @@
+groups:
+  - name: authentication_alerts
+    interval: 30s
+    rules:
+      # High login failure rate
+      - alert: HighLoginFailureRate
+        expr: rate(auth_login_attempts_total{status="failure"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "High login failure rate detected"
+          description: "Login failure rate is {{ $value | humanize }} failures/sec for the last 5 minutes"
+
+      # Possible brute force attack
+      - alert: PossibleBruteForceAttack
+        expr: rate(auth_login_attempts_total{status="failure"}[1m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: authentication
+        annotations:
+          summary: "🚨 Possible brute force attack detected"
+          description: "Detected {{ $value | humanize }} failed login attempts per second"
+
+      # High OTP failure rate
+      - alert: HighOTPFailureRate
+        expr: rate(auth_otp_failures_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "High OTP failure rate"
+          description: "OTP failure rate is {{ $value | humanize }} failures/sec"
+
+      # Slow token generation
+      - alert: SlowTokenGeneration
+        expr: histogram_quantile(0.95, rate(auth_login_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "Slow token generation detected"
+          description: "95th percentile of token generation time is {{ $value | humanize }}s"
+
+      # Low login success rate
+      - alert: LowLoginSuccessRate
+        expr: |
+          (
+            rate(auth_login_attempts_total{status="success"}[10m]) 
+            / 
+            rate(auth_login_attempts_total[10m])
+          ) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "Login success rate below 80%"
+          description: "Current success rate is {{ $value | humanizePercentage }}"
+
+      # Application down
+      - alert: AuthenticationServiceDown
+        expr: up{job="nestjs-auth"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: authentication
+        annotations:
+          summary: "🔴 Authentication service is down"
+          description: "The authentication service has been down for more than 1 minute"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes{job="nestjs-auth"} > 500000000
+        for: 5m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanize }}B (>500MB)"
+
+      # Too many active sessions
+      - alert: TooManyActiveSessions
+        expr: auth_active_sessions > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "High number of active sessions"
+          description: "Current active sessions: {{ $value }}"
+
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanize }}%"
+
+      # High disk usage
+      - alert: HighDiskUsage
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "🔴 Low disk space"
+          description: "Only {{ $value | humanize }}% disk space remaining"
+
+      # High memory usage (system)
+      - alert: HighSystemMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High system memory usage"
+          description: "Memory usage is {{ $value | humanize }}%"

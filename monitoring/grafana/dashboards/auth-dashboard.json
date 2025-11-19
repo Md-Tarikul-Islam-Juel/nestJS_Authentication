@@ -1,0 +1,281 @@
+{
+    "dashboard": {
+        "title": "Authentication Module Metrics",
+        "tags": [
+            "authentication",
+            "security"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 0,
+        "refresh": "10s",
+        "panels": [
+            {
+                "id": 1,
+                "title": "Login Success Rate",
+                "type": "stat",
+                "gridPos": {
+                    "h": 8,
+                    "w": 6,
+                    "x": 0,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "expr": "sum(rate(auth_login_attempts_total{status=\"success\"}[5m])) / sum(rate(auth_login_attempts_total[5m]))",
+                        "legendFormat": "Success Rate"
+                    }
+                ],
+                "options": {
+                    "graphMode": "area",
+                    "colorMode": "value",
+                    "orientation": "auto",
+                    "textMode": "value_and_name"
+                },
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percentunit",
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "value": null,
+                                    "color": "red"
+                                },
+                                {
+                                    "value": 0.8,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 0.95,
+                                    "color": "green"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 2,
+                "title": "Active Sessions",
+                "type": "stat",
+                "gridPos": {
+                    "h": 8,
+                    "w": 6,
+                    "x": 6,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "expr": "auth_active_sessions",
+                        "legendFormat": "Active Sessions"
+                    }
+                ],
+                "options": {
+                    "graphMode": "area",
+                    "colorMode": "value"
+                },
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "short"
+                    }
+                }
+            },
+            {
+                "id": 3,
+                "title": "Login Attempts (Success vs Failure)",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "expr": "sum(rate(auth_login_attempts_total{status=\"success\"}[5m]))",
+                        "legendFormat": "Success"
+                    },
+                    {
+                        "expr": "sum(rate(auth_login_attempts_total{status=\"failure\"}[5m]))",
+                        "legendFormat": "Failure"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "custom": {
+                            "drawStyle": "line",
+                            "lineInterpolation": "smooth",
+                            "fillOpacity": 10
+                        },
+                        "unit": "reqps"
+                    }
+                }
+            },
+            {
+                "id": 4,
+                "title": "Login Duration (p50, p95, p99)",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 8
+                },
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.50, rate(auth_login_duration_seconds_bucket[5m]))",
+                        "legendFormat": "p50"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, rate(auth_login_duration_seconds_bucket[5m]))",
+                        "legendFormat": "p95"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.99, rate(auth_login_duration_seconds_bucket[5m]))",
+                        "legendFormat": "p99"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "s"
+                    }
+                }
+            },
+            {
+                "id": 5,
+                "title": "OTP Failures by Reason",
+                "type": "piechart",
+                "gridPos": {
+                    "h": 8,
+                    "w": 6,
+                    "x": 12,
+                    "y": 8
+                },
+                "targets": [
+                    {
+                        "expr": "sum by (reason) (rate(auth_otp_failures_total[5m]))",
+                        "legendFormat": "{{reason}}"
+                    }
+                ]
+            },
+            {
+                "id": 6,
+                "title": "Token Operations",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 6,
+                    "x": 18,
+                    "y": 8
+                },
+                "targets": [
+                    {
+                        "expr": "sum by (operation) (rate(auth_token_operations_total[5m]))",
+                        "legendFormat": "{{operation}}"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "ops"
+                    }
+                }
+            },
+            {
+                "id": 7,
+                "title": "CPU Usage",
+                "type": "gauge",
+                "gridPos": {
+                    "h": 6,
+                    "w": 6,
+                    "x": 0,
+                    "y": 16
+                },
+                "targets": [
+                    {
+                        "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+                        "legendFormat": "CPU %"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percent",
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "value": null,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 70,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 90,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 8,
+                "title": "Memory Usage",
+                "type": "gauge",
+                "gridPos": {
+                    "h": 6,
+                    "w": 6,
+                    "x": 6,
+                    "y": 16
+                },
+                "targets": [
+                    {
+                        "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+                        "legendFormat": "Memory %"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percent",
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "value": null,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 80,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 95,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 9,
+                "title": "Active Alerts",
+                "type": "table",
+                "gridPos": {
+                    "h": 6,
+                    "w": 12,
+                    "x": 12,
+                    "y": 16
+                },
+                "targets": [
+                    {
+                        "expr": "ALERTS{alertstate=\"firing\"}",
+                        "format": "table"
+                    }
+                ]
+            }
+        ]
+    }
+}

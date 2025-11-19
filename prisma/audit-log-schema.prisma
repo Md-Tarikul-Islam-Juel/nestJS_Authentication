@@ -1,0 +1,24 @@
+// Add this model to your existing schema.prisma file
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String   @db.VarChar(50)
+  resource  String   @db.VarChar(255)
+  ip        String   @db.VarChar(45)
+  userAgent String   @db.VarChar(500)
+  status    String   @db.VarChar(20)
+  metadata  String?  @db.Text
+  timestamp DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([ip])
+  @@index([timestamp])
+  @@index([status])
+  @@map("audit_logs")
+}
+
+// Also add this relation to your existing User model:
+// auditLogs AuditLog[]

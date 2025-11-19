@@ -41,3 +41,4 @@ model User {
   // This allows reusing emails after soft deletion while maintaining uniqueness for active users
   @@map("users")
 }
+

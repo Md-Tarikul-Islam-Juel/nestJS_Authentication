@@ -1,19 +1,19 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import type {LoggerPort} from '../../domain/repositories/logger.port';
-import type {PasswordHasherPort} from '../../domain/repositories/password-hasher.port';
-import {USER_REPOSITORY_PORT, LOGGER_PORT, PASSWORD_HASHER_PORT} from '../di-tokens';
-import type {ChangePasswordDto, OAuthDto, SignupDto} from '../../interface/dto/auth-request.dto';
-import type {AuthenticatedRequest, ExistingUserInterface} from '../types/auth.types';
-import {User} from '../../domain/entities/user.entity';
-import {LoginSource} from '../../domain/enums/login-source.enum';
-import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
-import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
-import type {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
-import {CommonAuthService} from './common-auth.service';
-import {Email} from '../../domain/value-objects/email.vo';
-import {Password} from '../../domain/value-objects/password.vo';
+import { Inject, Injectable } from '@nestjs/common';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import type { LoggerPort } from '../../domain/repositories/logger.port';
+import type { PasswordHasherPort } from '../../domain/repositories/password-hasher.port';
+import { USER_REPOSITORY_PORT, LOGGER_PORT, PASSWORD_HASHER_PORT } from '../di-tokens';
+import type { ChangePasswordDto, OAuthDto, SignupDto } from '../../interface/dto/auth-request.dto';
+import type { AuthenticatedRequest, ExistingUserInterface } from '../types/auth.types';
+import { User } from '../../domain/entities/user.entity';
+import { LoginSource } from '../../domain/enums/login-source.enum';
+import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
+import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import { UserNotVerifiedError } from '../../domain/errors/user-not-verified.error';
+import type { UserRepositoryPort } from '../../domain/repositories/user.repository.port';
+import { CommonAuthService } from './common-auth.service';
+import { Email } from '../../domain/value-objects/email.vo';
+import { Password } from '../../domain/value-objects/password.vo';
 
 const failedToChangePassword = AUTH_MESSAGES.FAILED_TO_CHANGE_PASSWORD;
 const oldPasswordIsRequired = AUTH_MESSAGES.OLD_PASSWORD_REQUIRED;
@@ -34,7 +34,7 @@ export class UserService {
     private readonly logger: LoggerPort,
     @Inject(PASSWORD_HASHER_PORT)
     private readonly passwordHasher: PasswordHasherPort
-  ) {}
+  ) { }
 
   /**
    * Convert User domain entity to ExistingUserInterface

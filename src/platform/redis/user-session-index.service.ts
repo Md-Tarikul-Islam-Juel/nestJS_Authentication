@@ -1,13 +1,13 @@
-import {Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {RedisService} from './redis.service';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { RedisService } from './redis.service';
 
 @Injectable()
 export class UserSessionIndexService {
   constructor(
     private readonly configService: ConfigService,
     private readonly redis: RedisService
-  ) {}
+  ) { }
 
   async addSession(userId: number, sessionId: string, ttlSeconds: number): Promise<void> {
     const key = this.userSessionsKey(userId);
@@ -21,6 +21,10 @@ export class UserSessionIndexService {
     const pattern = this.userSessionMemberKey(userId, '*');
     const keys = await this.redis.keys(pattern);
     return keys.map(k => k.substring(k.lastIndexOf(':') + 1));
+  }
+
+  async getAllSessions(userId: number): Promise<string[]> {
+    return this.listSessions(userId);
   }
 
   async removeSession(userId: number, sessionId: string): Promise<void> {

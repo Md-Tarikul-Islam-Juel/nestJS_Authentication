@@ -1,5 +1,5 @@
-import {Injectable, Logger} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 @Injectable()
@@ -187,6 +187,100 @@ export class RedisService {
     } catch (error) {
       this.logger.error(`Redis keys error for pattern ${pattern}: ${error instanceof Error ? error.message : String(error)}`);
       return [];
+    }
+  }
+
+  // List operations
+  async lrange(key: string, start: number, stop: number): Promise<string[]> {
+    try {
+      await this.ensureConnected();
+      return await this.redisClient.lrange(key, start, stop);
+    } catch (error) {
+      this.logger.error(`Redis lrange error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+
+  async lpush(key: string, ...values: string[]): Promise<number> {
+    try {
+      await this.ensureConnected();
+      return await this.redisClient.lpush(key, ...values);
+    } catch (error) {
+      this.logger.error(`Redis lpush error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  async ltrim(key: string, start: number, stop: number): Promise<void> {
+    try {
+      await this.ensureConnected();
+      await this.redisClient.ltrim(key, start, stop);
+    } catch (error) {
+      this.logger.error(`Redis ltrim error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // Set operations
+  async sadd(key: string, ...members: string[]): Promise<number> {
+    try {
+      await this.ensureConnected();
+      return await this.redisClient.sadd(key, ...members);
+    } catch (error) {
+      this.logger.error(`Redis sadd error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  async srem(key: string, ...members: string[]): Promise<number> {
+    try {
+      await this.ensureConnected();
+      return await this.redisClient.srem(key, ...members);
+    } catch (error) {
+      this.logger.error(`Redis srem error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      return 0;
+    }
+  }
+
+  async scard(key: string): Promise<number> {
+    try {
+      await this.ensureConnected();
+      return await this.redisClient.scard(key);
+    } catch (error) {
+      this.logger.error(`Redis scard error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      return 0;
+    }
+  }
+
+  async sismember(key: string, member: string): Promise<boolean> {
+    try {
+      await this.ensureConnected();
+      const result = await this.redisClient.sismember(key, member);
+      return result === 1;
+    } catch (error) {
+      this.logger.error(`Redis sismember error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  }
+
+  // Additional operations
+  async incr(key: string): Promise<number> {
+    try {
+      await this.ensureConnected();
+      return await this.redisClient.incr(key);
+    } catch (error) {
+      this.logger.error(`Redis incr error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  async expire(key: string, seconds: number): Promise<boolean> {
+    try {
+      await this.ensureConnected();
+      const result = await this.redisClient.expire(key, seconds);
+      return result === 1;
+    } catch (error) {
+      this.logger.error(`Redis expire error for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
     }
   }
 }
