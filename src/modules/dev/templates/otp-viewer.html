@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Development OTP Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .otp-code {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">🔐 Development OTP Viewer</h1>
+                <div class="flex gap-3">
+                    <button onclick="refreshOtps()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
+                        🔄 Refresh
+                    </button>
+                    <button onclick="clearAllOtps()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <p class="text-yellow-700">
+                    ⚠️ <strong>Development Mode Only</strong> - This page is only accessible in development environment.
+                </p>
+            </div>
+
+            <div id="otpContainer" class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-300">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Email
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                OTP Code
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                Expires At
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="otpTableBody" class="divide-y divide-gray-200">
+                        <!-- OTPs will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyState" class="text-center py-12 hidden">
+                <p class="text-gray-500 text-lg">📭 No OTPs generated yet</p>
+                <p class="text-gray-400 text-sm mt-2">OTPs will appear here when users register or request password reset</p>
+            </div>
+
+            <div class="mt-4 text-sm text-gray-500">
+                <p>Auto-refreshing every 5 seconds... Last updated: <span id="lastUpdated"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+
+        async function fetchOtps() {
+            try {
+                const response = await fetch('/dev/otps/data');
+                const otps = await response.json();
+                displayOtps(otps);
+                updateLastUpdated();
+            } catch (error) {
+                console.error('Failed to fetch OTPs:', error);
+            }
+        }
+
+        function displayOtps(otps) {
+            const tbody = document.getElementById('otpTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const table = document.querySelector('table');
+
+            if (otps.length === 0) {
+                table.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            table.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            tbody.innerHTML = otps.map(otp => {
+                const expiresAt = new Date(otp.expiresAt);
+                const timeRemaining = getTimeRemaining(expiresAt);
+                
+                return `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${otp.email}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="otp-code text-blue-600 cursor-pointer hover:text-blue-800" 
+                                  onclick="copyToClipboard('${otp.otp}')" 
+                                  title="Click to copy">
+                                ${otp.otp}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${expiresAt.toLocaleTimeString()} (${timeRemaining})
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getTimeRemaining(expiresAt) {
+            const now = new Date();
+            const diff = expiresAt - now;
+            
+            if (diff <= 0) return 'Expired';
+            
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            
+            return `${minutes}m ${seconds}s`;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('OTP copied to clipboard!');
+            });
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+        }
+
+        function updateLastUpdated() {
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        async function refreshOtps() {
+            await fetchOtps();
+        }
+
+        async function clearAllOtps() {
+            if (!confirm('Are you sure you want to clear all OTPs?')) return;
+            
+            try {
+                await fetch('/dev/otps/clear', { method: 'POST' });
+                await fetchOtps();
+                showNotification('All OTPs cleared');
+            } catch (error) {
+                console.error('Failed to clear OTPs:', error);
+            }
+        }
+
+        // Initial load
+        fetchOtps();
+
+        // Auto-refresh every 5 seconds
+        autoRefreshInterval = setInterval(fetchOtps, 5000);
+    </script>
+</body>
+</html>
