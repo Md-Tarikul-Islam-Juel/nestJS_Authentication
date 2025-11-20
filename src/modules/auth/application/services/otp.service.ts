@@ -1,14 +1,14 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {AccountLockedError} from '../../domain/errors/account-locked.error';
-import {CacheError} from '../../domain/errors/cache-error.error';
-import {InvalidOtpError} from '../../domain/errors/invalid-otp.error';
-import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import type {LoggerPort} from '../../domain/repositories/logger.port';
-import type {OtpCachePort} from '../../domain/repositories/otp-cache.port';
-import type {UserRepositoryPort} from '../../domain/repositories/user.repository.port';
-import {LOGGER_PORT, OTP_CACHE_PORT, USER_REPOSITORY_PORT} from '../di-tokens';
-import {CommonAuthService} from './common-auth.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AccountLockedError } from '../../domain/errors/account-locked.error';
+import { CacheError } from '../../domain/errors/cache-error.error';
+import { InvalidOtpError } from '../../domain/errors/invalid-otp.error';
+import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import type { LoggerPort } from '../../domain/repositories/logger.port';
+import type { OtpCachePort } from '../../domain/repositories/otp-cache.port';
+import type { UserRepositoryPort } from '../../domain/repositories/user.repository.port';
+import { LOGGER_PORT, OTP_CACHE_PORT, USER_REPOSITORY_PORT } from '../di-tokens';
+import { CommonAuthService } from './common-auth.service';
 
 /**
  * OTP Service
@@ -30,8 +30,8 @@ export class OtpService {
     private readonly configService: ConfigService,
     private readonly commonAuthService: CommonAuthService
   ) {
-    this.maxFailedAttempts = this.configService.get<number>('authConfig.otp.otpMaxFailedAttempts');
-    this.lockoutTime = this.configService.get<number>('authConfig.otp.otpLockoutTime');
+    this.maxFailedAttempts = this.configService.get<number>('authConfig.otp.otpMaxFailedAttempts') ?? 5;
+    this.lockoutTime = this.configService.get<number>('authConfig.otp.otpLockoutTime') ?? 5;
   }
 
   async storeOtp(email: string, otp: string, otpExpireTime: number): Promise<void> {

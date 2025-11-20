@@ -12,11 +12,10 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
     "typeRoots": [
       "node_modules/@types"
     ],
@@ -24,8 +23,6 @@
       "node",
       "passport-facebook",
       "jest"
-    ],
-    "strict": true,
-    "esModuleInterop": true
+    ]
   }
 }

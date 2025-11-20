@@ -1,21 +1,21 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
-import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import type {JwtServicePort, TokenConfig} from '../../domain/repositories/jwt-service.port';
-import type {Tokens} from '../../interface/dto/auth-base.dto';
-import type {SigninSuccessResponseDto} from '../../interface/dto/auth-response.dto';
-import {VerifyOtpCommand} from '../commands/verify-otp.command';
-import {JWT_SERVICE_PORT} from '../di-tokens';
-import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
-import {CommonAuthService} from '../services/common-auth.service';
-import {LastActivityTrackService} from '../services/last-activity-track.service';
-import {OtpDomainService} from '../services/otp-domain.service';
-import {OtpService} from '../services/otp.service';
-import {UserService} from '../services/user.service';
-import type {ExistingUserInterface} from '../types/auth.types';
-import {createTokenConfig} from './token-config.factory';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { UNIT_OF_WORK_PORT } from '../../../../common/persistence/uow/di-tokens';
+import { UnitOfWorkPort } from '../../../../common/persistence/uow/uow.port';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import type { JwtServicePort, TokenConfig } from '../../domain/repositories/jwt-service.port';
+import type { Tokens } from '../../interface/dto/auth-base.dto';
+import type { SigninSuccessResponseDto } from '../../interface/dto/auth-response.dto';
+import { VerifyOtpCommand } from '../commands/verify-otp.command';
+import { JWT_SERVICE_PORT } from '../di-tokens';
+import { UserMapper, UserMapperInput } from '../mappers/user.mapper';
+import { CommonAuthService } from '../services/common-auth.service';
+import { LastActivityTrackService } from '../services/last-activity-track.service';
+import { OtpDomainService } from '../services/otp-domain.service';
+import { OtpService } from '../services/otp.service';
+import { UserService } from '../services/user.service';
+import type { ExistingUserInterface } from '../types/auth.types';
+import { createTokenConfig } from './token-config.factory';
 
 @Injectable()
 export class VerifyOtpUseCase {
@@ -38,6 +38,10 @@ export class VerifyOtpUseCase {
 
   async execute(command: VerifyOtpCommand): Promise<SigninSuccessResponseDto> {
     const existingUser = await this.userService.findUserByEmail(command.email);
+
+    if (!existingUser) {
+      throw new Error(AUTH_MESSAGES.USER_NOT_FOUND);
+    }
 
     await this.verifyUserAndOtp(existingUser, command.otp);
 

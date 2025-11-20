@@ -1,22 +1,22 @@
 import {
-  ArgumentsHost,
-  BadRequestException,
-  Catch,
-  ConflictException,
-  ExceptionFilter,
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException
+    ArgumentsHost,
+    BadRequestException,
+    Catch,
+    ConflictException,
+    ExceptionFilter,
+    ForbiddenException,
+    HttpException,
+    HttpStatus,
+    Injectable,
+    NotFoundException,
+    UnauthorizedException
 } from '@nestjs/common';
-import {GqlArgumentsHost} from '@nestjs/graphql';
-import {Prisma} from '@prisma/client';
-import {PrismaClientInitializationError} from '@prisma/client/runtime/library';
-import {Request} from 'express';
-import {DomainError} from '../../errors/domain-error';
-import {LoggerService} from '../../observability/logger.service';
+import { GqlArgumentsHost } from '@nestjs/graphql';
+import { Prisma } from '@prisma/client';
+import { PrismaClientInitializationError } from '@prisma/client/runtime/library';
+import { Request } from 'express';
+import { DomainError } from '../../errors/domain-error';
+import { LoggerService } from '../../observability/logger.service';
 
 @Catch()
 @Injectable()
@@ -282,7 +282,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
     switch (exception.code) {
       case 'P2002':
-        message = `${exception.meta?.target?.[0] || 'Field'} already exists`;
+        const target = (exception as any).meta?.target;
+        message = `${target?.[0] || 'Field'} already exists`;
         status = HttpStatus.CONFLICT;
         break;
       case 'P2025':
@@ -324,10 +325,11 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const validationResponse = exception.getResponse();
 
     let message = 'Validation Error';
-    if (Array.isArray(validationResponse['message'])) {
-      message = validationResponse['message'].join(', ');
-    } else if (typeof validationResponse['message'] === 'string') {
-      message = validationResponse['message'];
+    const messages = (validationResponse as any).message;
+    if (Array.isArray(messages)) {
+      message = messages.join(', ');
+    } else if (typeof messages === 'string') {
+      message = messages;
     }
 
     this.handleException(isHttp, response, status, message, request);

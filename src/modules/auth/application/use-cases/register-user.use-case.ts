@@ -1,22 +1,22 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
-import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {LoginSource} from '../../domain/enums/login-source.enum';
-import {EmailAlreadyExistsError} from '../../domain/errors/email-already-exists.error';
-import type {EmailServicePort} from '../../domain/repositories/email.service.port';
-import type {LoggerPort} from '../../domain/repositories/logger.port';
-import type {SignupSuccessResponseDto} from '../../interface/dto/auth-response.dto';
-import {RegisterUserCommand} from '../commands/register-user.command';
-import {EMAIL_SERVICE_PORT, LOGGER_PORT} from '../di-tokens';
-import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
-import {CommonAuthService} from '../services/common-auth.service';
-import {LastActivityTrackService} from '../services/last-activity-track.service';
-import {OtpDomainService} from '../services/otp-domain.service';
-import {OtpService} from '../services/otp.service';
-import {PasswordPolicyService} from '../services/password-policy.service';
-import {UserService} from '../services/user.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { UNIT_OF_WORK_PORT } from '../../../../common/persistence/uow/di-tokens';
+import { UnitOfWorkPort } from '../../../../common/persistence/uow/uow.port';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import { LoginSource } from '../../domain/enums/login-source.enum';
+import { EmailAlreadyExistsError } from '../../domain/errors/email-already-exists.error';
+import type { EmailServicePort } from '../../domain/repositories/email.service.port';
+import type { LoggerPort } from '../../domain/repositories/logger.port';
+import type { SignupSuccessResponseDto } from '../../interface/dto/auth-response.dto';
+import { RegisterUserCommand } from '../commands/register-user.command';
+import { EMAIL_SERVICE_PORT, LOGGER_PORT } from '../di-tokens';
+import { UserMapper, UserMapperInput } from '../mappers/user.mapper';
+import { CommonAuthService } from '../services/common-auth.service';
+import { LastActivityTrackService } from '../services/last-activity-track.service';
+import { OtpDomainService } from '../services/otp-domain.service';
+import { OtpService } from '../services/otp.service';
+import { PasswordPolicyService } from '../services/password-policy.service';
+import { UserService } from '../services/user.service';
 @Injectable()
 export class RegisterUserUseCase {
   private readonly saltRounds: number;
@@ -37,8 +37,8 @@ export class RegisterUserUseCase {
     @Inject(UNIT_OF_WORK_PORT)
     private readonly uow: UnitOfWorkPort
   ) {
-    this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds');
-    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
+    this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds') ?? 10;
+    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime') ?? 5;
   }
 
   async execute(command: RegisterUserCommand): Promise<SignupSuccessResponseDto> {

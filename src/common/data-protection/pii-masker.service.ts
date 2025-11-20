@@ -1,4 +1,4 @@
-import {Injectable} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 /**
  * PII Masker Service
@@ -18,7 +18,7 @@ export class PiiMaskerService {
    */
   maskObject<T extends Record<string, any>>(obj: T | null | undefined): Partial<T> {
     if (!obj || typeof obj !== 'object') {
-      return obj as Partial<T>;
+      return {} as Partial<T>;
     }
 
     const masked: Partial<T> = {};

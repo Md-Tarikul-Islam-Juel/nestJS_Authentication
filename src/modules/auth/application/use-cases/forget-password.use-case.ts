@@ -1,15 +1,15 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {EmailServiceError} from '../../domain/errors/email-service-error.error';
-import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import type {EmailServicePort} from '../../domain/repositories/email.service.port';
-import {EMAIL_SERVICE_PORT} from '../di-tokens';
-import {OtpDomainService} from '../services/otp-domain.service';
-import {OtpService} from '../services/otp.service';
-import {UserService} from '../services/user.service';
-import {ForgetPasswordCommand} from '../commands/forget-password.command';
-import type {ForgetPasswordSuccessResponseDto} from '../../interface/dto/auth-response.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import { EmailServiceError } from '../../domain/errors/email-service-error.error';
+import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import type { EmailServicePort } from '../../domain/repositories/email.service.port';
+import type { ForgetPasswordSuccessResponseDto } from '../../interface/dto/auth-response.dto';
+import { ForgetPasswordCommand } from '../commands/forget-password.command';
+import { EMAIL_SERVICE_PORT } from '../di-tokens';
+import { OtpDomainService } from '../services/otp-domain.service';
+import { OtpService } from '../services/otp.service';
+import { UserService } from '../services/user.service';
 
 @Injectable()
 export class ForgetPasswordUseCase {
@@ -23,7 +23,7 @@ export class ForgetPasswordUseCase {
     private readonly emailService: EmailServicePort,
     private readonly otpDomainService: OtpDomainService
   ) {
-    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
+    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime') ?? 5;
   }
 
   async execute(command: ForgetPasswordCommand): Promise<ForgetPasswordSuccessResponseDto> {

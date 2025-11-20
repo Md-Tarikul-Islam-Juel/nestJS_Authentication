@@ -1,21 +1,20 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import type {TokenConfig} from '../../domain/repositories/jwt-service.port';
-import {JWT_SERVICE_PORT} from '../di-tokens';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {LoginSource} from '../../domain/enums/login-source.enum';
-import type {JwtServicePort} from '../../domain/repositories/jwt-service.port';
-import type {ExistingUserInterface} from '../types/auth.types';
-import {CommonAuthService} from '../services/common-auth.service';
-import {OtpDomainService} from '../services/otp-domain.service';
-import {PasswordPolicyService} from '../services/password-policy.service';
-import {LastActivityTrackService} from '../services/last-activity-track.service';
-import {UserService} from '../services/user.service';
-import {createTokenConfig} from './token-config.factory';
-import {OAuthSignInCommand} from '../commands/oauth-sign-in.command';
-import type {Tokens} from '../../interface/dto/auth-base.dto';
-import type {SigninSuccessResponseDto} from '../../interface/dto/auth-response.dto';
-import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import { LoginSource } from '../../domain/enums/login-source.enum';
+import type { JwtServicePort, TokenConfig } from '../../domain/repositories/jwt-service.port';
+import type { Tokens } from '../../interface/dto/auth-base.dto';
+import type { SigninSuccessResponseDto } from '../../interface/dto/auth-response.dto';
+import { OAuthSignInCommand } from '../commands/oauth-sign-in.command';
+import { JWT_SERVICE_PORT } from '../di-tokens';
+import { UserMapper, UserMapperInput } from '../mappers/user.mapper';
+import { CommonAuthService } from '../services/common-auth.service';
+import { LastActivityTrackService } from '../services/last-activity-track.service';
+import { OtpDomainService } from '../services/otp-domain.service';
+import { PasswordPolicyService } from '../services/password-policy.service';
+import { UserService } from '../services/user.service';
+import type { ExistingUserInterface } from '../types/auth.types';
+import { createTokenConfig } from './token-config.factory';
 
 @Injectable()
 export class OAuthSignInUseCase {
@@ -32,24 +31,31 @@ export class OAuthSignInUseCase {
     private readonly otpDomainService: OtpDomainService,
     private readonly lastActivityService: LastActivityTrackService
   ) {
-    this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds');
+    this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds') ?? 10;
     this.tokenConfig = createTokenConfig(this.configService);
   }
 
   async execute(command: OAuthSignInCommand): Promise<SigninSuccessResponseDto> {
-    let existingUser = await this.userService.findUserByEmail(command.email);
+    const {email, loginSource, authorizerId} = command;
+
+    let existingUser = await this.userService.findUserByEmail(email);
 
     if (!existingUser) {
+      // Register new user via OAuth
       const randomPassword = this.otpDomainService.generateOtp(10);
       const hashedPassword = await this.passwordService.hashPassword(randomPassword, this.saltRounds);
+      
+      // Create user payload
+      const newUserPayload = {
+        email: command.email,
+        firstName: command.firstName ?? '',
+        lastName: command.lastName ?? '',
+        loginSource: command.loginSource,
+        mfaEnabled: command.mfaEnabled
+      };
+
       existingUser = await this.userService.createUser(
-        {
-          email: command.email,
-          firstName: command.firstName,
-          lastName: command.lastName,
-          loginSource: command.loginSource,
-          mfaEnabled: command.mfaEnabled
-        },
+        newUserPayload as any, // Casting to any to avoid DTO strict issues for now, or we should import SignupDto
         hashedPassword,
         command.loginSource as LoginSource,
         true

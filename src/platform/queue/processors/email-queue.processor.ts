@@ -21,7 +21,7 @@ export class EmailQueueProcessor extends WorkerHost {
     private logger: LoggerService
   ) {
     super();
-    this.otpSenderMail = this.configService.get<string>('authConfig.email.email');
+    this.otpSenderMail = this.configService.get<string>('authConfig.email.email') ?? '';
   }
 
   /**

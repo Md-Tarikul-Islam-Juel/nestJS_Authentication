@@ -1,7 +1,7 @@
-import {registerAs} from '@nestjs/config';
+import { registerAs } from '@nestjs/config';
 
 export default registerAs('authConfig', () => ({
-  bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) ?? 14, // default to 14 rounds
+  bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS ?? '14', 10),
 
   token: {
     useJwe: process.env.USE_JWE?.toLowerCase() === 'true' || process.env.USE_JWE === undefined, // default to true
@@ -27,14 +27,14 @@ export default registerAs('authConfig', () => ({
   },
 
   otp: {
-    otpExpireTime: parseInt(process.env.OTP_EXPIRE_TIME, 10) ?? 5, // default to 5 min
-    otpMaxFailedAttempts: parseInt(process.env.OTP_MAX_FAILED_ATTEMPTS, 10) ?? 5, // default to 5 attempts
-    otpLockoutTime: parseInt(process.env.OTP_LOCKOUT_TIME, 10) ?? 5 // default to 5 min lockout time
+    otpExpireTime: parseInt(process.env.OTP_EXPIRE_TIME ?? '5', 10),
+    otpMaxFailedAttempts: parseInt(process.env.OTP_MAX_FAILED_ATTEMPTS ?? '5', 10),
+    otpLockoutTime: parseInt(process.env.OTP_LOCKOUT_TIME ?? '5', 10)
   },
 
   password: {
-    minLength: parseInt(process.env.PASSWORD_MIN_LENGTH, 10) ?? 8, // default to 8 characters
-    maxLength: parseInt(process.env.PASSWORD_MAX_LENGTH, 10) ?? 32, // default to 32 characters
+    minLength: parseInt(process.env.PASSWORD_MIN_LENGTH ?? '8', 10),
+    maxLength: parseInt(process.env.PASSWORD_MAX_LENGTH ?? '32', 10),
     requireLowercase: process.env.PASSWORD_REQUIRE_LOWERCASE ?? true, // default to true
     requireUppercase: process.env.PASSWORD_REQUIRE_UPPERCASE ?? true, // default to true
     requireNumbers: process.env.PASSWORD_REQUIRE_NUMBERS ?? true, // default to true
@@ -47,7 +47,7 @@ export default registerAs('authConfig', () => ({
 
   email: {
     host: process.env.OTP_SENDER_MAIL_HOST,
-    port: parseInt(process.env.OTP_SENDER_MAIL_PORT, 10), // default to 587 for non-secure SMTP
+    port: parseInt(process.env.OTP_SENDER_MAIL_PORT ?? '587', 10),
     email: process.env.OTP_SENDER_MAIL,
     pass: process.env.OTP_SENDER_MAIL_PASSWORD
   },
@@ -67,13 +67,13 @@ export default registerAs('authConfig', () => ({
 
   redis: {
     host: process.env.REDIS_HOST,
-    port: parseInt(process.env.REDIS_PORT, 10),
-    cacheExpiration: parseInt(process.env.REDIS_CACHE_EXPIRATION, 10)
+    port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
+    cacheExpiration: parseInt(process.env.REDIS_CACHE_EXPIRATION ?? '3600', 10)
   },
 
   database: {
     host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT, 10),
+    port: parseInt(process.env.DATABASE_PORT ?? '5432', 10),
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
     name: process.env.DATABASE_NAME,

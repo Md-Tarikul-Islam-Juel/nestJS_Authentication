@@ -1,26 +1,26 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {JtiProvider} from '../../../../platform/jwt/jti.provider';
-import {JtiAllowlistService} from '../../../../platform/redis/jti-allowlist.service';
-import {UserSessionIndexService} from '../../../../platform/redis/user-session-index.service';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
-import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {UserNotVerifiedError} from '../../domain/errors/user-not-verified.error';
-import type {EmailServicePort} from '../../domain/repositories/email.service.port';
-import type {JwtServicePort, TokenConfig} from '../../domain/repositories/jwt-service.port';
-import type {LoggerPort} from '../../domain/repositories/logger.port';
-import type {Tokens} from '../../interface/dto/auth-base.dto';
-import type {SigninSuccessResponseDto} from '../../interface/dto/auth-response.dto';
-import {SignInCommand} from '../commands/sign-in.command';
-import {EMAIL_SERVICE_PORT, JWT_SERVICE_PORT, LOGGER_PORT} from '../di-tokens';
-import {UserMapper, UserMapperInput} from '../mappers/user.mapper';
-import {CommonAuthService} from '../services/common-auth.service';
-import {LastActivityTrackService} from '../services/last-activity-track.service';
-import {OtpDomainService} from '../services/otp-domain.service';
-import {OtpService} from '../services/otp.service';
-import {UserService} from '../services/user.service';
-import {createTokenConfig} from './token-config.factory';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JtiProvider } from '../../../../platform/jwt/jti.provider';
+import { JtiAllowlistService } from '../../../../platform/redis/jti-allowlist.service';
+import { UserSessionIndexService } from '../../../../platform/redis/user-session-index.service';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
+import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import { UserNotVerifiedError } from '../../domain/errors/user-not-verified.error';
+import type { EmailServicePort } from '../../domain/repositories/email.service.port';
+import type { JwtServicePort, TokenConfig } from '../../domain/repositories/jwt-service.port';
+import type { LoggerPort } from '../../domain/repositories/logger.port';
+import type { Tokens } from '../../interface/dto/auth-base.dto';
+import type { SigninSuccessResponseDto } from '../../interface/dto/auth-response.dto';
+import { SignInCommand } from '../commands/sign-in.command';
+import { EMAIL_SERVICE_PORT, JWT_SERVICE_PORT, LOGGER_PORT } from '../di-tokens';
+import { UserMapper, UserMapperInput } from '../mappers/user.mapper';
+import { CommonAuthService } from '../services/common-auth.service';
+import { LastActivityTrackService } from '../services/last-activity-track.service';
+import { OtpDomainService } from '../services/otp-domain.service';
+import { OtpService } from '../services/otp.service';
+import { UserService } from '../services/user.service';
+import { createTokenConfig } from './token-config.factory';
 
 @Injectable()
 export class SignInUseCase {
@@ -44,7 +44,7 @@ export class SignInUseCase {
     private readonly jtiAllowlist: JtiAllowlistService,
     private readonly userSessionIndex: UserSessionIndexService
   ) {
-    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime');
+    this.otpExpireTime = this.configService.get<number>('authConfig.otp.otpExpireTime') ?? 5;
     this.tokenConfig = createTokenConfig(this.configService);
   }
 

@@ -1,6 +1,6 @@
-import {Injectable} from '@nestjs/common';
-import type {TokenPayload} from '../../domain/repositories/jwt-service.port';
-import type {ExistingUserInterface} from '../types/auth.types';
+import { Injectable } from '@nestjs/common';
+import type { TokenPayload } from '../../domain/repositories/jwt-service.port';
+import type { ExistingUserInterface } from '../types/auth.types';
 
 /**
  * Common Auth Service
@@ -40,7 +40,7 @@ export class CommonAuthService {
     const sanitized = {...user};
 
     sensitiveFields.forEach(field => {
-      delete sanitized[field];
+      delete sanitized[field as keyof typeof sanitized];
     });
 
     // Ensure required fields are present

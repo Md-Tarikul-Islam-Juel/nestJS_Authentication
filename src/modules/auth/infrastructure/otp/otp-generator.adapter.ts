@@ -1,6 +1,6 @@
-import {Injectable} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as otpGenerator from 'otp-generator';
-import type {OtpGeneratorPort} from '../../domain/repositories/otp-generator.port';
+import type { OtpGeneratorPort } from '../../domain/repositories/otp-generator.port';
 
 /**
  * OTP Generator Adapter
@@ -17,8 +17,7 @@ export class OtpGeneratorAdapter implements OtpGeneratorPort {
   generate(length: number): string {
     return otpGenerator.generate(length, {
       digits: true,
-      upperCase: false,
-      lowercase: false,
+
       upperCaseAlphabets: false,
       lowerCaseAlphabets: false,
       specialChars: false

@@ -1,18 +1,19 @@
-import {ApiProperty} from '@nestjs/swagger';
-import {IsEmail, IsNotEmpty, IsOptional, IsString, Matches} from 'class-validator';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class EmailDto {
   @ApiProperty({example: 'user@example.com', description: 'The email of the user'})
   @IsEmail({}, {message: 'Email must be a valid email address'})
   @IsNotEmpty({message: 'Email is required'})
-  email: string;
+  email!: string;
 }
 
 export class PasswordDto {
   @ApiProperty({example: 'password', description: 'The password for the account'})
   @IsString()
   @IsNotEmpty({message: 'Password is required'})
-  password: string;
+  password!: string;
 }
 
 export class NameDto {
@@ -35,44 +36,53 @@ export class OtpDto {
   @Matches(/^\d{6}$/, {
     message: 'OTP must be a 6-digit number'
   })
-  otp: string;
+  otp!: string;
 }
 
 export class BaseResponseDto {
   @ApiProperty({description: 'Indicates if the operation was successful', example: true})
-  success: boolean;
+  success!: boolean;
 
   @ApiProperty({description: 'Message indicating the result of the operation', example: 'Operation successful'})
-  message: string;
+  message!: string;
 }
 
+@ObjectType()
 export class Tokens {
   @ApiProperty({
     description: 'Access token',
     example: 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0...'
   })
-  accessToken: string;
+  @Field()
+  accessToken!: string;
 
   @ApiProperty({
     description: 'Refresh token',
     example: 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0...'
   })
-  refreshToken: string;
+  @Field()
+  refreshToken!: string;
 }
 
+@ObjectType()
 export class UserData {
   @ApiProperty({description: 'User ID', example: 1})
-  id: number;
+  @Field(() => Int)
+  id!: number;
 
   @ApiProperty({description: 'User email', example: 'user@example.com'})
-  email: string;
+  @Field()
+  email!: string;
 
   @ApiProperty({description: 'User first name', example: 'John'})
-  firstName: string;
+  @Field()
+  firstName!: string;
 
   @ApiProperty({description: 'User last name', example: 'Doe'})
-  lastName: string;
+  @Field()
+  lastName!: string;
 
   @ApiProperty({description: 'Account creation timestamp', example: '2025-10-31T13:55:58.802Z', required: false})
+  @Field({nullable: true})
   createdAt?: Date;
 }

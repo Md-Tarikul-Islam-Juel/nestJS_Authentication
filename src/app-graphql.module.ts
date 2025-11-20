@@ -11,7 +11,7 @@ import { GqlExceptionFilter } from './common/graphql/errors/gql-exception.filter
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/graphql-schema/schema-user.gql'),
       path: '/user',
-      context: ({ req, res }) => ({ req, res }),
+      context: ({ req, res }: { req: any; res: any }) => ({ req, res }),
       buildSchemaOptions: {
         numberScalarMode: 'integer',
       },

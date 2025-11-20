@@ -1,7 +1,7 @@
-import {Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {PassportStrategy} from '@nestjs/passport';
-import {Profile, Strategy} from 'passport-facebook';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { Profile, Strategy } from 'passport-facebook';
 
 interface FacebookUser {
   email: string;
@@ -31,8 +31,8 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     try {
       const user: FacebookUser = {
         authorizerId: profile.id,
-        firstName: profile.name.givenName,
-        lastName: profile.name.familyName,
+        firstName: profile.name?.givenName ?? '',
+        lastName: profile.name?.familyName ?? '',
         email: `${profile.id}@facebook.com`,
         loginSource: 'facebook'
       };

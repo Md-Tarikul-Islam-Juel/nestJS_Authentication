@@ -1,14 +1,14 @@
-import {Inject, Injectable} from '@nestjs/common';
-import {ConfigService} from '@nestjs/config';
-import {UNIT_OF_WORK_PORT} from '../../../../common/persistence/uow/di-tokens';
-import {UnitOfWorkPort} from '../../../../common/persistence/uow/uow.port';
-import {AUTH_MESSAGES} from '../../../_shared/constants';
-import {InvalidCredentialsError} from '../../domain/errors/invalid-credentials.error';
-import {UserNotFoundError} from '../../domain/errors/user-not-found.error';
-import {PasswordPolicyService} from '../services/password-policy.service';
-import {UserService} from '../services/user.service';
-import {ChangePasswordCommand} from '../commands/change-password.command';
-import type {ChangePasswordSuccessResponseDto} from '../../interface/dto/auth-response.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { UNIT_OF_WORK_PORT } from '../../../../common/persistence/uow/di-tokens';
+import { UnitOfWorkPort } from '../../../../common/persistence/uow/uow.port';
+import { AUTH_MESSAGES } from '../../../_shared/constants';
+import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
+import { UserNotFoundError } from '../../domain/errors/user-not-found.error';
+import type { ChangePasswordSuccessResponseDto } from '../../interface/dto/auth-response.dto';
+import { ChangePasswordCommand } from '../commands/change-password.command';
+import { PasswordPolicyService } from '../services/password-policy.service';
+import { UserService } from '../services/user.service';
 
 @Injectable()
 export class ChangePasswordUseCase {
@@ -21,7 +21,7 @@ export class ChangePasswordUseCase {
     @Inject(UNIT_OF_WORK_PORT)
     private readonly uow: UnitOfWorkPort
   ) {
-    this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds');
+    this.saltRounds = this.configService.get<number>('authConfig.bcryptSaltRounds') ?? 10;
   }
 
   async execute(command: ChangePasswordCommand): Promise<ChangePasswordSuccessResponseDto> {
