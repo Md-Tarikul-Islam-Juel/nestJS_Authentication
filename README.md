@@ -927,10 +927,6 @@ complete the login process.
 MFA adds an extra layer of security by ensuring that even if a user's password is compromised, unauthorized access to
 the account is still prevented.
 
-## Logout Process Documentation
-
-For detailed information on the logout process, see [Logout logic process](documents/logics_md/logout_process.md).
-
 
 ## 📦 Dockerize Your NestJS Application for Production
 
@@ -938,7 +934,8 @@ For detailed instructions on how to Dockerize your NestJS application for produc
 
 check it
 
-👉 [**Building and Deploying a NestJS Application with Docker Compose, PostgreSQL, and Prisma**](https://medium.com/@md.tarikulislamjuel/building-and-deploying-a-nestjs-application-with-docker-compose-postgresql-and-prisma-659ba65da25b)
+[Building and Deploying a NestJS Application with Docker Compose, PostgreSQL, and Prisma](https://medium.com/@md.tarikulislamjuel/building-and-deploying-a-nestjs-application-with-docker-compose-postgresql-and-prisma-659ba65da25b "Building and Deploying a NestJS Application with Docker Compose, PostgreSQL, and Prisma")
+
 
 
 ## 📞 Contact Information
